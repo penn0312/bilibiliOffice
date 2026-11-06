@@ -1,0 +1,91 @@
+{
+  "kind": "real-bilibili",
+  "date": "2026-11-06T10:48:52.410Z",
+  "environment": "Chromium clean context, no login",
+  "checks": [
+    {
+      "name": "home",
+      "url": "https://www.bilibili.com/",
+      "cards": 14,
+      "status": [],
+      "location": "https://www.bilibili.com/",
+      "playerStatus": [
+        "原生播放器已就绪；使用播放器控制播放"
+      ],
+      "before": 0.81462,
+      "frames": [
+        "https://www.bilibili.com/",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html",
+        "https://www.bilibili.com/video/BV1Zj4v6aEuj/?boToken=dc78a52b-5d86-4796-bc6a-713033485dbc&boParent=https%3A%2F%2Fwww.bilibili.com",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html"
+      ],
+      "after": 2.764679,
+      "sameFrame": true
+    },
+    {
+      "name": "search",
+      "url": "https://search.bilibili.com/all?keyword=%E7%A7%91%E6%8A%80",
+      "cards": 45,
+      "status": [],
+      "location": "https://search.bilibili.com/all?vt=62156297&keyword=%E7%A7%91%E6%8A%80",
+      "playerStatus": [
+        "原生播放器已就绪；使用播放器控制播放"
+      ],
+      "before": 0.672537,
+      "frames": [
+        "https://search.bilibili.com/all?vt=62156297&keyword=%E7%A7%91%E6%8A%80",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://www.bilibili.com/video/BV1ZkxX6yEzA/?boToken=5197ad73-efcf-4ffb-a6e7-ad4dd9c73d41&boParent=https%3A%2F%2Fsearch.bilibili.com",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html"
+      ],
+      "after": 1.974333,
+      "sameFrame": true
+    },
+    {
+      "name": "detail",
+      "url": "https://www.bilibili.com/video/BV1xx411c7mD/?p=1",
+      "cards": 1,
+      "status": [
+        "原站评论尚未加载。播放后同步，或打开原版加载；发送评论会在原站真实发布。"
+      ],
+      "location": "https://www.bilibili.com/video/BV1xx411c7mD/",
+      "playerStatus": [
+        "原生播放器已就绪；使用播放器控制播放"
+      ],
+      "before": 0.593262,
+      "frames": [
+        "https://www.bilibili.com/video/BV1xx411c7mD/",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://www.bilibili.com/video/BV1xx411c7mD/?boToken=e663fb0e-da77-4886-b1cb-32859206b232&boParent=https%3A%2F%2Fwww.bilibili.com",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/leader-election/iframe.html?leaderID=watchlaterpipwindow",
+        "https://s1.hdslb.com/bfs/seed/jinkela/short/cols/iframe.html"
+      ],
+      "after": 2.246577,
+      "sameFrame": true
+    }
+  ],
+  "pageErrors": [],
+  "networkFailures": [
+    {
+      "url": "https://data.bilibili.com/v2/log/web",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://xy116x196x156x35xy.mcdn.bilivideo.cn:8082/v1/resource/upgcxcode/90/27/43364712790/43364712790-1-30216.m4s",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://svx61w.edge.mountaintoys.cn:4483/upgcxcode/90/27/43364712790/43364712790-1-100022.m4s",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "notes": [
+    "GM HTTP emulation uses same browser context request client; no cookie or token extraction.",
+    "No comments, likes, favorites, follows or media downloads performed."
+  ]
+}

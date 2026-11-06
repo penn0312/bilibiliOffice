@@ -1,0 +1,23 @@
+#bilioffice-root .bo-image-dialog {
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  background: var(--bo-panel);
+  color: var(--bo-text);
+  max-width: 95vw;
+  max-height: 95vh;
+  padding: 12px;
+}
+#bilioffice-root .bo-image-dialog::backdrop {
+  background: #000b;
+}
+#bilioffice-root .bo-image-dialog img {
+  display: block;
+  max-width: 85vw;
+  max-height: 80vh;
+  object-fit: contain;
+}
+#bilioffice-root .bo-image-dialog button {
+  display: block;
+  padding: 8px;
+  margin: auto;
+}

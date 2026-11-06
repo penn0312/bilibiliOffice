@@ -1,0 +1,178 @@
+html.bilioffice-active {
+  overflow: hidden;
+}
+#bilioffice-root [hidden] {
+  display: none;
+}
+#bilioffice-root button:focus-visible,
+#bilioffice-root a:focus-visible {
+  outline: 2px solid var(--bo-accent);
+  outline-offset: 3px;
+}
+#bilioffice-root .bo-search {
+  display: flex;
+  gap: 4px;
+  max-width: 500px;
+}
+#bilioffice-root .bo-search input {
+  padding-right: 8px;
+  min-width: 40px;
+}
+#bilioffice-root .bo-search button {
+  position: static;
+  flex: none;
+  white-space: nowrap;
+}
+#bilioffice-root .bo-video-card {
+  width: 560px;
+  max-width: 100%;
+}
+#bilioffice-root .bo-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  object-fit: cover;
+}
+#bilioffice-root .bo-cover-placeholder {
+  pointer-events: none;
+}
+#bilioffice-root .bo-cover[data-loaded="true"] .bo-cover-placeholder {
+  display: none;
+}
+#bilioffice-root .bo-cover .bo-play {
+  width: auto;
+  padding: 8px 15px;
+  z-index: 1;
+}
+#bilioffice-root .bo-player-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #000b;
+  z-index: 7;
+}
+#bilioffice-root .bo-player.bo-expanded {
+  position: fixed;
+  inset: 10vh 5vw 15vh;
+  width: 90vw;
+  height: 75vh;
+  aspect-ratio: auto;
+  z-index: 8;
+}
+#bilioffice-root .bo-inline-player:has(.bo-expanded) > .bo-player-actions {
+  position: fixed;
+  bottom: 6vh;
+  right: 5vw;
+  z-index: 9;
+  background: var(--bo-panel);
+  padding: 8px;
+  border-radius: 8px;
+}
+#bilioffice-root .bo-player-status {
+  font-size: 12px;
+  color: var(--bo-muted);
+  padding: 8px 2px;
+}
+#bilioffice-root .bo-settings p {
+  font-size: 12px;
+  color: var(--bo-muted);
+}
+#bilioffice-root .bo-bubble {
+  min-width: 0;
+}
+#bilioffice-root .bo-comments {
+  margin: 20px 0 0 44px;
+  max-width: 720px;
+}
+#bilioffice-root .bo-toolbar {
+  flex-wrap: wrap;
+}
+#bilioffice-root .bo-status {
+  white-space: pre-wrap;
+}
+#bilioffice-root .bo-status button {
+  margin: 8px;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-sidebar {
+  width: 210px;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-avatar {
+  border-radius: 50%;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-bubble {
+  border-radius: 14px;
+  box-shadow: 0 3px 12px #1677ff10;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-chat {
+  padding-top: 16px;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-message {
+  margin-bottom: 16px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar {
+  width: 270px;
+  border-left: 56px solid var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-bubble {
+  background: var(--bo-panel);
+  border-radius: 6px;
+  box-shadow: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-avatar {
+  border-radius: 7px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-nav button {
+  padding: 7px 10px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-header {
+  height: 70px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-message {
+  margin-bottom: 28px;
+}
+#bilioffice-root[data-appearance="dark"] .bo-nav button.active,
+#bilioffice-root[data-appearance="dark"] .bo-conversation {
+  background: #283850;
+}
+#bilioffice-root mark {
+  background: #ffe599;
+  color: #242424;
+}
+#bilioffice-root .bo-message-content {
+  width: min(680px, calc(100% - 48px));
+}
+#bilioffice-root .bo-inline-player {
+  width: 560px;
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  #bilioffice-root[data-theme] .bo-sidebar {
+    width: 240px;
+  }
+  #bilioffice-root .bo-header {
+    gap: 6px;
+  }
+  #bilioffice-root .bo-header h1 {
+    display: none;
+  }
+  #bilioffice-root .bo-player-actions {
+    flex-wrap: wrap;
+  }
+  #bilioffice-root .bo-settings {
+    right: 8px;
+    width: 270px;
+  }
+  #bilioffice-root .bo-comments {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #bilioffice-root[data-appearance="system"] .bo-nav button.active,
+  #bilioffice-root[data-appearance="system"] .bo-conversation {
+    background: #283850;
+  }
+}

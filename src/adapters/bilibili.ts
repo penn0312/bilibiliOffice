@@ -1,14 +1,289 @@
-import type { Comment, Route, VideoItem } from '../types';
-const fallbackCovers = ['https://i0.hdslb.com/bfs/archive/7f2f4828d5a4f6d4e1b6d9be8adf4f7dc5a1f9d9.jpg','https://i0.hdslb.com/bfs/archive/4f4d2b5a3c4d2d5a1e5d2f4d5b6a7c8d.jpg'];
-const sample: VideoItem[] = [
-  { id:'BV1office01', title:'用一杯咖啡的时间，了解今天的科技趋势', url:'https://www.bilibili.com/video/BV1office01', cover:fallbackCovers[0], author:{name:'科技观察室',avatar:'https://i.pravatar.cc/80?img=12'},views:'12.8万',published:'今天 09:20',duration:'08:32' },
-  { id:'BV1office02', title:'城市漫游：下班后的慢生活与街角风景', url:'https://www.bilibili.com/video/BV1office02', cover:fallbackCovers[1], author:{name:'行走的镜头',avatar:'https://i.pravatar.cc/80?img=32'},views:'8.4万',published:'昨天 18:06',duration:'12:10' },
-  { id:'BV1office03', title:'效率工具箱：把重复工作交给自动化', url:'https://www.bilibili.com/video/BV1office03', cover:fallbackCovers[0], author:{name:'效率研究所',avatar:'https://i.pravatar.cc/80?img=5'},views:'5.1万',published:'周一 13:44',duration:'06:25' },
-];
-export const routeFromLocation = (): Route => { const u = new URL(location.href); const m = u.pathname.match(/\/video\/(BV[\w]+)/i); if (m) return {kind:'video',videoId:m[1],part:Number(u.searchParams.get('p') || 1)}; if (u.hostname.startsWith('search.') || u.pathname === '/search' || u.pathname === '/all') return {kind:'search',query:u.searchParams.get('keyword') || '',page:Number(u.searchParams.get('page') || 1)}; return {kind:'home'}; };
-export const getVideo = (id?: string): VideoItem => sample.find(v => v.id.toLowerCase() === id?.toLowerCase()) || { ...sample[0], id:id || sample[0].id, title: document.title.replace(/_哔哩哔哩.*/, '') || sample[0].title, url: location.href };
-function nativeVideos(query = ''): VideoItem[] { const seen = new Set<string>(); const found: VideoItem[] = []; document.querySelectorAll<HTMLAnchorElement>('a[href*="/video/"]:not([href*="bilioffice"])').forEach((a) => { const m = a.href.match(/\/video\/(BV[\w]+)/i); if (!m || seen.has(m[1])) return; const card = a.closest<HTMLElement>('[class*="video-card"],.feed-card,.bili-video-card') || a; const img = card.querySelector<HTMLImageElement>('img'); const title = (a.getAttribute('title') || img?.alt || a.textContent || '').trim(); if (!title) return; seen.add(m[1]); found.push({ id:m[1], title, url:`https://www.bilibili.com/video/${m[1]}`, cover:img?.currentSrc || img?.src || '', author:{name:'B站用户',avatar:AVATAR_PLACEHOLDER}, views:'', published:'' }); }); return query ? found.filter(v=>v.title.toLowerCase().includes(query.toLowerCase())) : found; }
-const AVATAR_PLACEHOLDER = 'https://i.pravatar.cc/80?img=49';
-export async function fetchVideos(query = '', page = 1, signal?: AbortSignal): Promise<VideoItem[]> { await new Promise((resolve, reject) => { const t = setTimeout(resolve, 260); signal?.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('Aborted','AbortError')); }, {once:true}); }); if (query.trim().toLowerCase() === 'empty') return []; const real = nativeVideos(query); if (real.length) return real.slice((page-1)*12,page*12); return sample.map((v,i) => ({...v, title: query ? `${query}｜${v.title}` : v.title, id:`${v.id}-${page}-${i}`})); }
-export async function fetchComments(_videoId: string, signal?: AbortSignal): Promise<Comment[]> { await new Promise((resolve, reject) => { const t = setTimeout(resolve, 180); signal?.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('Aborted','AbortError')); }, {once:true}); }); return [{id:'c1',author:{name:'小明',avatar:'https://i.pravatar.cc/60?img=11'},text:'这个节奏很舒服，收藏下来周末再看。',time:'2小时前',likes:128,replies:[{id:'r1',author:{name:'科技观察室',avatar:'https://i.pravatar.cc/60?img=12'},text:'谢谢支持，评论区见。',time:'1小时前',likes:12}]}]; }
-export function openOriginal(url: string) { window.open(url, '_blank', 'noopener,noreferrer'); }
+import type { Route, VideoItem, SearchResult } from "../types";
+declare const GM_xmlhttpRequest:
+  | undefined
+  | ((options: any) => { abort(): void });
+const initialPath = location.pathname;
+const initialURL = new URL(location.href);
+export const orders = ["totalrank", "click", "pubdate", "dm", "stow"];
+export function routeFromLocation(): Route {
+  const u = new URL(location.href),
+    m = u.pathname.match(/^\/video\/(BV[a-zA-Z0-9]+)\/?$/);
+  if (m)
+    return {
+      kind: "video",
+      videoId: m[1],
+      part: Math.max(1, Number(u.searchParams.get("p")) || 1),
+    };
+  if (u.hostname === "search.bilibili.com" || u.pathname === "/search")
+    return {
+      kind: "search",
+      query: u.searchParams.get("keyword") || "",
+      page: Math.max(1, Number(u.searchParams.get("page")) || 1),
+      order: orders.includes(u.searchParams.get("order") || "")
+        ? u.searchParams.get("order")!
+        : "totalrank",
+    };
+  if (u.pathname.includes("/popular"))
+    return {
+      kind: "popular",
+      page: Math.max(1, Number(u.searchParams.get("pn")) || 1),
+    };
+  if (
+    u.pathname.startsWith("/c/") ||
+    u.pathname.startsWith("/v/") ||
+    u.pathname.startsWith("/channel/")
+  )
+    return { kind: "section", path: u.pathname };
+  return { kind: "home" };
+}
+export const safeURL = (value: string, base = location.href) => {
+  if (!value.trim()) return "";
+  try {
+    const u = new URL(value, base);
+    return u.protocol === "https:" ? u.href : "";
+  } catch {
+    return "";
+  }
+};
+export function originalVideo(id: string, part = 1) {
+  return `https://www.bilibili.com/video/${encodeURIComponent(id)}/?p=${part}`;
+}
+export function openOriginal(url: string) {
+  const u = safeURL(url);
+  if (u) window.open(u, "_blank", "noopener,noreferrer");
+}
+function plain(value: unknown) {
+  const doc = new DOMParser().parseFromString(String(value || ""), "text/html");
+  return doc.body.textContent || "";
+}
+export function nativeVideos(): VideoItem[] {
+  const seen = new Set<string>(),
+    out: VideoItem[] = [];
+  document
+    .querySelectorAll<HTMLAnchorElement>('a[href*="/video/"]')
+    .forEach((a) => {
+      if (a.closest("#bilioffice-root")) return;
+      const id = a.href.match(/\/video\/(BV[\w]+)/)?.[1];
+      if (!id || seen.has(id)) return;
+      const card =
+        a.closest(".bili-video-card,.feed-card,.video-item,.video-list-item") ||
+        a;
+      const img = card.querySelector<HTMLImageElement>("img");
+      const title = (
+        card.querySelector("[title]")?.getAttribute("title") ||
+        a.title ||
+        img?.alt ||
+        a.textContent ||
+        ""
+      ).trim();
+      if (!title) return;
+      seen.add(id);
+      out.push({
+        id,
+        title,
+        url: originalVideo(id),
+        cover: safeURL(img?.currentSrc || img?.dataset.src || img?.src || ""),
+        author: {
+          name:
+            card
+              .querySelector(
+                ".bili-video-card__info--author,.up-name,.bili-video-card__info--owner",
+              )
+              ?.textContent?.trim() || "B站视频",
+          avatar: "",
+        },
+        duration: card
+          .querySelector(".bili-video-card__stats__duration,.length")
+          ?.textContent?.trim(),
+        views: card
+          .querySelector(".bili-video-card__stats--item")
+          ?.textContent?.trim(),
+      });
+    });
+  return out;
+}
+export function api(path: string, signal: AbortSignal): Promise<any> {
+  const url = `https://api.bilibili.com${path}`;
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    let done = false;
+    let cancel = () => {};
+    const finish = (err?: Error, data?: any) => {
+      if (done) return;
+      done = true;
+      signal.removeEventListener("abort", abort);
+      err ? reject(err) : resolve(data);
+    };
+    const abort = () => {
+      cancel();
+      finish(new DOMException("Aborted", "AbortError"));
+    };
+    signal.addEventListener("abort", abort, { once: true });
+    const parse = (text: string) => {
+      try {
+        const j = JSON.parse(text);
+        if (j.code !== 0)
+          throw Error(`B站接口 ${j.code}：${j.message || "请求被限制"}`);
+        finish(undefined, j.data);
+      } catch (e) {
+        finish(e as Error);
+      }
+    };
+    if (typeof GM_xmlhttpRequest === "function") {
+      const req = GM_xmlhttpRequest({
+        method: "GET",
+        url,
+        timeout: 18000,
+        onload: (r: any) =>
+          r.status === 200
+            ? parse(r.responseText)
+            : finish(Error(`HTTP ${r.status}`)),
+        onerror: () => finish(Error("网络请求失败")),
+        ontimeout: () => finish(Error("请求超时")),
+      });
+      cancel = () => req.abort();
+    } else {
+      const c = new AbortController();
+      cancel = () => c.abort();
+      fetch(url, { credentials: "include", signal: c.signal })
+        .then((r) => {
+          if (!r.ok) throw Error(`HTTP ${r.status}`);
+          return r.text();
+        })
+        .then(parse, (e) => finish(e));
+    }
+  });
+}
+function item(v: any): VideoItem {
+  return {
+    id: v.bvid,
+    title: plain(v.title),
+    url: originalVideo(v.bvid),
+    cover: safeURL(v.pic || ""),
+    author: {
+      name: plain(v.owner?.name || v.author || "B站用户"),
+      avatar: safeURL(v.owner?.face || ""),
+    },
+    duration:
+      typeof v.duration === "string"
+        ? v.duration
+        : `${Math.floor((v.duration || 0) / 60)}:${String((v.duration || 0) % 60).padStart(2, "0")}`,
+    views: String(v.stat?.view ?? v.play ?? ""),
+    published: v.pubdate
+      ? new Date(v.pubdate * 1000).toLocaleDateString("zh-CN")
+      : "",
+  };
+}
+export async function fetchVideos(
+  route: Route,
+  signal: AbortSignal,
+): Promise<SearchResult> {
+  if (route.kind === "search") {
+    if (!route.query) return { items: [], pages: 0, total: 0 };
+    const p = new URLSearchParams({
+      search_type: "video",
+      keyword: route.query,
+      page: String(route.page || 1),
+      order: route.order || "totalrank",
+    });
+    if (
+      initialURL.hostname === "search.bilibili.com" &&
+      initialURL.searchParams.get("keyword") === route.query &&
+      Number(initialURL.searchParams.get("page") || 1) === (route.page || 1) &&
+      (initialURL.searchParams.get("order") || "totalrank") ===
+        (route.order || "totalrank")
+    ) {
+      const cards = await waitNative(signal);
+      if (cards.length) {
+        const buttons = [
+          ...document.querySelectorAll(
+            "[class*=pagination] button,[class*=pagenation] button,[class*=pagination] .page-item",
+          ),
+        ];
+        const pages = Math.max(
+          route.page || 1,
+          ...buttons
+            .map((b) => Number(b.textContent?.trim()))
+            .filter(Number.isFinite),
+        );
+        return { items: cards, total: cards.length, pages };
+      }
+    }
+    const data = await api(`/x/web-interface/search/type?${p}`, signal);
+    return {
+      items: (data.result || []).filter((v: any) => v.bvid).map(item),
+      pages: data.numPages || 1,
+      total: data.numResults || 0,
+    };
+  }
+  const native =
+    (route.kind === "home" && initialPath === "/") ||
+    (route.kind === "section" && initialPath === route.path)
+      ? await waitNative(signal)
+      : [];
+  if ((route.kind === "home" || route.kind === "section") && native.length)
+    return { items: native, total: native.length, pages: 1 };
+  if (route.kind === "section")
+    throw Error("当前分区未采集到原站列表，请使用原版加载后重试。");
+  const data = await api(
+    `/x/web-interface/popular?ps=20&pn=${route.page || 1}`,
+    signal,
+  );
+  return {
+    items: (data.list || []).map(item),
+    total: 0,
+    pages: data.no_more ? route.page || 1 : (route.page || 1) + 1,
+  };
+}
+export async function getVideo(
+  id: string,
+  part: number,
+  signal: AbortSignal,
+): Promise<VideoItem> {
+  const data = await api(
+    `/x/web-interface/view?bvid=${encodeURIComponent(id)}`,
+    signal,
+  );
+  return { ...item(data), part, url: originalVideo(id, part) };
+}
+
+async function waitNative(signal: AbortSignal): Promise<VideoItem[]> {
+  const existing = nativeVideos();
+  if (existing.length) return existing;
+  const root = document.querySelector("#app,#i_cecream,main");
+  if (!root) return [];
+  return new Promise((resolve, reject) => {
+    let debounce: ReturnType<typeof setTimeout>;
+    const cleanup = () => {
+      observer.disconnect();
+      clearTimeout(timer);
+      clearTimeout(debounce);
+      signal.removeEventListener("abort", abort);
+    };
+    const abort = () => {
+      cleanup();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const read = () => {
+      const items = nativeVideos();
+      if (items.length) {
+        cleanup();
+        resolve(items);
+      }
+    };
+    const observer = new MutationObserver(() => {
+      clearTimeout(debounce);
+      debounce = setTimeout(read, 200);
+    });
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(nativeVideos());
+    }, 4000);
+    observer.observe(root, { childList: true, subtree: true });
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) abort();
+  });
+}
