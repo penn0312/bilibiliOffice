@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const script = await readFile('dist/bilioffice.user.js','utf8');
+const browser = await chromium.launch({headless:true}); const page = await browser.newPage({viewport:{width:1280,height:820}});
+await page.route('**/i0.hdslb.com/**', route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#33a06f"/></svg>'}));
+await page.goto('https://www.bilibili.com/'); await page.addScriptTag({content:script}); await page.waitForSelector('#bilioffice-root .bo-video-card');
+assert.equal(await page.locator('#bilioffice-root .bo-cover').first().evaluate(el=>Math.round(el.getBoundingClientRect().width / el.getBoundingClientRect().height*100)/100),1.78);
+await page.locator('#bilioffice-root').screenshot({path:'docs/qa-home.png'});
+await page.locator('.bo-play').first().click(); await page.waitForSelector('.bo-player iframe'); const frameBefore=await page.locator('.bo-player iframe').evaluate(el=>el); assert.equal(await page.locator('.bo-player').count(),1);
+await page.locator('button[aria-label="放大播放器"]').click(); assert.equal(await page.locator('.bo-player iframe').count(),1); await page.keyboard.press('Escape'); assert.equal(await page.locator('.bo-player iframe').count(),1);
+await page.locator('[data-action=settings]').click(); await page.locator('[data-setting=theme]').selectOption('feishu'); assert.equal(await page.locator('#bilioffice-root').getAttribute('data-theme'),'feishu');
+await page.locator('input[aria-label="搜索 B 站视频"]').fill('office'); await page.keyboard.press('Enter'); await page.waitForSelector('#bilioffice-root .bo-video-card'); await page.locator('#bilioffice-root').screenshot({path:'docs/qa-search-feishu.png'});
+await page.evaluate(() => history.pushState({},'', '/video/BV1office01')); await page.waitForSelector('.bo-comments'); await page.locator('#bilioffice-root').screenshot({path:'docs/qa-video-feishu.png'});
+await page.locator('input[aria-label="搜索 B 站视频"]').fill('empty'); await page.keyboard.press('Enter'); await page.waitForSelector('.bo-empty'); assert.match(await page.locator('.bo-empty').innerText(),/没有找到/);
+await page.locator('#bilioffice-root').screenshot({path:'docs/qa-search-empty.png'}); await browser.close(); console.log('browser regression passed');

@@ -1,0 +1,17 @@
+{
+  "name": "bilioffice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bilibili office chat UI userscript with WeCom, DingTalk and Feishu themes",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node --check dist/bilioffice.user.js",
+    "test": "node tests/browser-regression.mjs",
+    "test:unit": "node tests/unit.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.55.0"
+  }
+}

@@ -1,0 +1,7 @@
+import type { ThemeId } from './types';
+export const themes: Record<ThemeId, { name: string; icon: string; tokens: Record<string, string> }> = {
+  wecom: { name: '企业微信', icon: '💬', tokens: { accent: '#07c160', accent2: '#dff8e9', side: '#f5f7f8', bubble: '#e9f8ee', panel: '#ffffff', border: '#dfe5e8', text: '#1f2329', muted: '#7b858e' } },
+  dingtalk: { name: '钉钉', icon: '🔔', tokens: { accent: '#1677ff', accent2: '#e6f1ff', side: '#f0f5ff', bubble: '#e8f3ff', panel: '#ffffff', border: '#dbe5f4', text: '#17233d', muted: '#71809b' } },
+  feishu: { name: '飞书', icon: '🪶', tokens: { accent: '#3370ff', accent2: '#e9efff', side: '#f5f6f8', bubble: '#eef3ff', panel: '#ffffff', border: '#e5e6eb', text: '#1f2329', muted: '#86909c' } },
+};
+export function applyTheme(root: HTMLElement, id: ThemeId, appearance: 'light' | 'dark' | 'system') { const t = themes[id]; root.dataset.theme = id; root.dataset.appearance = appearance; Object.entries(t.tokens).forEach(([k, v]) => root.style.setProperty(`--bo-${k}`, v)); }
