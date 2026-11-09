@@ -440,7 +440,7 @@ SOFTWARE.
         author: { name: name.textContent?.trim() || "", avatar: "" },
         text,
         time: find("#pubdate,.reply-time,.sub-reply-time")?.textContent || "",
-        likes: Number(find("#like .count,.like-count")?.textContent) || 0,
+        likes: Number(find("#like #count,#like .count,.like-count")?.textContent) || 0,
         images,
         replies: []
       };
@@ -458,10 +458,64 @@ SOFTWARE.
       return c;
     }).filter(Boolean);
   }
+  function commentNotice() {
+    const host = commentHost();
+    if (!host) return "";
+    return deepAll("#limit-mask-tip", host.shadowRoot || host)[0]?.textContent?.trim().slice(0, 400) || "";
+  }
+  function watchComments(signal, onChange) {
+    let previous = "";
+    let deadline = Date.now() + 1e4;
+    let activated = false;
+    const previousScroll = { x: window.scrollX, y: window.scrollY };
+    let managedScroll = null;
+    const scan = () => {
+      if (signal.aborted) return;
+      const comments = readComments();
+      if (!comments.length && !activated) {
+        const anchor = commentHost() || document.querySelector("#commentapp,#comment");
+        if (anchor) {
+          const rect = anchor.getBoundingClientRect();
+          if (rect.height > 0 || rect.width > 0) {
+            activated = true;
+            if (rect.top >= window.innerHeight || rect.bottom <= 0) {
+              anchor.scrollIntoView({ block: "start" });
+              managedScroll = { x: window.scrollX, y: window.scrollY };
+            }
+          }
+        }
+      }
+      const notice = commentNotice() || (!comments.length && Date.now() >= deadline ? "\u539F\u7AD9\u8BC4\u8BBA\u6682\u672A\u52A0\u8F7D\uFF0C\u53EF\u70B9\u201C\u540C\u6B65\u5DF2\u52A0\u8F7D\u201D\u91CD\u8BD5\u6216\u5728\u539F\u7248\u67E5\u770B\u3002" : "");
+      const key = JSON.stringify([comments, notice]);
+      if (key !== previous) {
+        previous = key;
+        onChange(comments, notice);
+      }
+    };
+    if (signal.aborted) return () => {
+    };
+    const timer = setInterval(scan, 650);
+    const cleanup = () => {
+      clearInterval(timer);
+      signal.removeEventListener("abort", cleanup);
+      if (managedScroll && window.scrollX === managedScroll.x && window.scrollY === managedScroll.y)
+        window.scrollTo(previousScroll.x, previousScroll.y);
+    };
+    signal.addEventListener("abort", cleanup, { once: true });
+    scan();
+    return () => {
+      deadline = Date.now() + 1e4;
+      activated = false;
+      previous = "";
+      scan();
+    };
+  }
   async function loadMore(signal) {
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     const host = commentHost();
     if (!host) throw Error("\u539F\u7AD9\u8BC4\u8BBA\u5C1A\u672A\u52A0\u8F7D\uFF0C\u8BF7\u6253\u5F00\u539F\u7248\u89C6\u9891\u9875\u3002");
+    const restriction = commentNotice();
+    if (restriction) throw Error(`\u539F\u7AD9\u63D0\u793A\uFF1A${restriction}`);
     const before = JSON.stringify(readComments());
     const button = deepAll(
       "button,.view-more,.reply-more",
@@ -1482,7 +1536,7 @@ ${last.author}\uFF1A${last.text}`;
       return () => {
       };
     const abort = new AbortController();
-    let video = null, stopped = false, lastComments = "", attempted = false;
+    let video = null, stopped = false, attempted = false;
     const send = (type, data = {}) => parent.postMessage({ channel: CHANNEL, token, type, ...data }, origin);
     const style = document.createElement("style");
     style.textContent = `
@@ -1556,22 +1610,19 @@ ${last.author}\uFF1A${last.text}`;
         }
       }
       sendState();
-      const comments = readComments();
-      const serialized = JSON.stringify(comments);
-      if (serialized !== lastComments) {
-        lastComments = serialized;
-        send("comments", { comments });
-      }
     };
+    const refreshComments = watchComments(
+      abort.signal,
+      (comments, notice) => send("comments", { comments, notice })
+    );
     const onMessage = (e) => {
       if (e.origin !== origin || e.source !== parent || e.data?.channel !== CHANNEL || e.data?.token !== token)
         return;
-      if (e.data.type === "comments:sync")
-        send("comments", { comments: readComments() });
+      if (e.data.type === "comments:sync") refreshComments();
       if (e.data.type === "pause") video?.pause();
       if (e.data.type === "comments:more")
         loadMore(abort.signal).then(
-          (comments) => send("comments", { comments }),
+          () => refreshComments(),
           (err) => send("comments:error", { message: err.message })
         );
     };
@@ -1706,7 +1757,11 @@ ${last.author}\uFF1A${last.text}`;
             status.textContent = "\u81EA\u52A8\u64AD\u653E\u88AB\u6D4F\u89C8\u5668\u963B\u6B62\uFF0C\u8BF7\u5728\u64AD\u653E\u5668\u4E2D\u70B9\u51FB\u64AD\u653E\u3002";
             break;
           case "comments":
-            if (Array.isArray(e.data.comments)) onComments(e.data.comments);
+            if (Array.isArray(e.data.comments))
+              onComments(
+                e.data.comments,
+                typeof e.data.notice === "string" ? e.data.notice.slice(0, 400) : ""
+              );
             break;
           case "comments:error":
             onCommentError(String(e.data.message));
@@ -1786,6 +1841,8 @@ ${last.author}\uFF1A${last.text}`;
       __publicField(this, "comments", []);
       __publicField(this, "commentList", null);
       __publicField(this, "commentStatus", null);
+      __publicField(this, "commentNotice", "");
+      __publicField(this, "refreshNativeComments");
       __publicField(this, "cards", /* @__PURE__ */ new Map());
       __publicField(this, "disposed", false);
       __publicField(this, "request", 0);
@@ -2382,6 +2439,8 @@ ${last.author}\uFF1A${last.text}`;
       this.comments = [];
       this.commentList = null;
       this.commentStatus = null;
+      this.commentNotice = "";
+      this.refreshNativeComments = void 0;
       this.input.value = this.route.query || "";
       this.heading.textContent = {
         home: this.settings.theme === "feishu" ? "\u4EA7\u54C1\u4F53\u9A8C\u4EA4\u6D41" : "\u63A8\u8350\u4F1A\u8BDD",
@@ -2480,7 +2539,19 @@ ${last.author}\uFF1A${last.text}`;
           );
           if (signal.aborted || serial !== this.request) return;
           this.sync([v]);
-          this.renderComments(readComments());
+          const nativeId = new URL(this.nativeURL).pathname.match(
+            /\/video\/(BV\w+)/
+          )?.[1];
+          this.renderComments(nativeId === v.id ? readComments() : []);
+          if (nativeId === v.id) {
+            this.refreshNativeComments = watchComments(
+              signal,
+              (comments, notice) => {
+                if (!this.player.iframe) this.renderComments(comments, notice);
+              }
+            );
+          } else
+            this.commentStatus.textContent = "\u70B9\u51FB\u64AD\u653E\u540E\u52A0\u8F7D\u5F53\u524D\u89C6\u9891\u7684\u8BC4\u8BBA\u3002";
           status.remove();
           return;
         }
@@ -2730,8 +2801,9 @@ ${last.author}\uFF1A${last.text}`;
           () => {
             host.remove();
             card.hidden = false;
+            this.refreshNativeComments?.();
           },
-          (comments) => this.renderComments(comments),
+          (comments, notice = "") => this.renderComments(comments, notice),
           (message) => {
             if (this.commentStatus) this.commentStatus.textContent = message;
           },
@@ -2739,29 +2811,35 @@ ${last.author}\uFF1A${last.text}`;
         );
         card.hidden = true;
         bubble.prepend(host);
-        this.renderComments([]);
+        this.renderComments([], "");
       };
       cover.addEventListener("click", (e) => {
         if (e.target !== play) start();
       });
       return row;
     }
-    renderComments(comments) {
+    renderComments(comments, notice = this.commentNotice) {
       this.comments = comments;
+      this.commentNotice = notice;
       if (!this.commentList) {
         const area = el("section", "bo-comments");
         area.append(el("h3", "", "\u5F53\u524D\u5DF2\u52A0\u8F7D\u8BC4\u8BBA"));
         const actions = el("div", "bo-player-actions");
         actions.append(
-          this.button(
-            "\u540C\u6B65\u5DF2\u52A0\u8F7D",
-            () => this.player.iframe ? this.player.syncComments() : this.renderComments(readComments())
-          ),
+          this.button("\u540C\u6B65\u5DF2\u52A0\u8F7D", () => {
+            if (this.player.iframe) this.player.syncComments();
+            else if (this.refreshNativeComments) this.refreshNativeComments();
+            else if (this.commentStatus)
+              this.commentStatus.textContent = "\u70B9\u51FB\u64AD\u653E\u540E\u52A0\u8F7D\u5F53\u524D\u89C6\u9891\u7684\u8BC4\u8BBA\u3002";
+          }),
           this.button("\u52A0\u8F7D\u66F4\u591A", () => {
             if (this.commentStatus)
               this.commentStatus.textContent = "\u6B63\u5728\u7B49\u5F85\u539F\u7AD9\u8BC4\u8BBA\u53D8\u5316\u2026";
             if (this.player.iframe) this.player.loadMore();
-            else {
+            else if (!this.refreshNativeComments) {
+              if (this.commentStatus)
+                this.commentStatus.textContent = "\u70B9\u51FB\u64AD\u653E\u540E\u52A0\u8F7D\u5F53\u524D\u89C6\u9891\u7684\u8BC4\u8BBA\u3002";
+            } else {
               const signal = this.controller.signal;
               loadMore(signal).then(
                 (c) => {
@@ -2782,7 +2860,9 @@ ${last.author}\uFF1A${last.text}`;
         area.append(actions, this.commentStatus, this.commentList);
         this.chat.append(area);
       }
-      this.commentStatus.textContent = comments.length ? `${comments.length} \u6761\u4E3B\u8BC4\u8BBA\uFF1B\u5305\u542B\u5F53\u524D\u53EF\u89C1\u697C\u4E2D\u697C\u3002` : "\u539F\u7AD9\u8BC4\u8BBA\u5C1A\u672A\u52A0\u8F7D\u3002\u64AD\u653E\u540E\u540C\u6B65\uFF0C\u6216\u6253\u5F00\u539F\u7248\u52A0\u8F7D\uFF1B\u53D1\u9001\u8BC4\u8BBA\u4F1A\u5728\u539F\u7AD9\u771F\u5B9E\u53D1\u5E03\u3002";
+      const summary = comments.length ? `${comments.length} \u6761\u4E3B\u8BC4\u8BBA\uFF1B\u5305\u542B\u5F53\u524D\u5DF2\u52A0\u8F7D\u697C\u4E2D\u697C\u3002` : notice ? "\u6682\u672A\u8BFB\u53D6\u5230\u8BC4\u8BBA\u3002" : "\u6B63\u5728\u7B49\u5F85\u539F\u7AD9\u8BC4\u8BBA\u52A0\u8F7D\u2026";
+      this.commentStatus.textContent = notice ? `${summary}
+\u63D0\u793A\uFF1A${notice}` : summary;
       const render = (c) => {
         const a = el("article", "bo-comment");
         a.append(

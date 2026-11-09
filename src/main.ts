@@ -12,6 +12,7 @@ import {
 } from "./adapters/bilibili";
 import {
   readComments,
+  watchComments,
   loadMore,
   exportComments,
 } from "./adapters/bilibili/comments";
@@ -67,6 +68,8 @@ class App {
   comments: Comment[] = [];
   commentList: HTMLElement | null = null;
   commentStatus: HTMLElement | null = null;
+  commentNotice = "";
+  refreshNativeComments: (() => void) | undefined;
   cards = new Map<string, { node: HTMLElement; title: HTMLElement }>();
   disposed = false;
   request = 0;
@@ -706,6 +709,8 @@ class App {
     this.comments = [];
     this.commentList = null;
     this.commentStatus = null;
+    this.commentNotice = "";
+    this.refreshNativeComments = undefined;
     this.input.value = this.route.query || "";
     this.heading.textContent = {
       home: this.settings.theme === "feishu" ? "产品体验交流" : "推荐会话",
@@ -818,7 +823,19 @@ class App {
         );
         if (signal.aborted || serial !== this.request) return;
         this.sync([v]);
-        this.renderComments(readComments());
+        const nativeId = new URL(this.nativeURL).pathname.match(
+          /\/video\/(BV\w+)/,
+        )?.[1];
+        this.renderComments(nativeId === v.id ? readComments() : []);
+        if (nativeId === v.id) {
+          this.refreshNativeComments = watchComments(
+            signal,
+            (comments, notice) => {
+              if (!this.player.iframe) this.renderComments(comments, notice);
+            },
+          );
+        } else
+          this.commentStatus!.textContent = "点击播放后加载当前视频的评论。";
         status.remove();
         return;
       }
@@ -1106,8 +1123,9 @@ class App {
         () => {
           host.remove();
           card.hidden = false;
+          this.refreshNativeComments?.();
         },
-        (comments) => this.renderComments(comments),
+        (comments, notice = "") => this.renderComments(comments, notice),
         (message) => {
           if (this.commentStatus) this.commentStatus.textContent = message;
         },
@@ -1115,30 +1133,35 @@ class App {
       );
       card.hidden = true;
       bubble.prepend(host);
-      this.renderComments([]);
+      this.renderComments([], "");
     };
     cover.addEventListener("click", (e) => {
       if (e.target !== play) start();
     });
     return row;
   }
-  renderComments(comments: Comment[]) {
+  renderComments(comments: Comment[], notice = this.commentNotice) {
     this.comments = comments;
+    this.commentNotice = notice;
     if (!this.commentList) {
       const area = el("section", "bo-comments");
       area.append(el("h3", "", "当前已加载评论"));
       const actions = el("div", "bo-player-actions");
       actions.append(
-        this.button("同步已加载", () =>
-          this.player.iframe
-            ? this.player.syncComments()
-            : this.renderComments(readComments()),
-        ),
+        this.button("同步已加载", () => {
+          if (this.player.iframe) this.player.syncComments();
+          else if (this.refreshNativeComments) this.refreshNativeComments();
+          else if (this.commentStatus)
+            this.commentStatus.textContent = "点击播放后加载当前视频的评论。";
+        }),
         this.button("加载更多", () => {
           if (this.commentStatus)
             this.commentStatus.textContent = "正在等待原站评论变化…";
           if (this.player.iframe) this.player.loadMore();
-          else {
+          else if (!this.refreshNativeComments) {
+            if (this.commentStatus)
+              this.commentStatus.textContent = "点击播放后加载当前视频的评论。";
+          } else {
             const signal = this.controller.signal;
             loadMore(signal).then(
               (c) => {
@@ -1159,9 +1182,14 @@ class App {
       area.append(actions, this.commentStatus, this.commentList);
       this.chat.append(area);
     }
-    this.commentStatus!.textContent = comments.length
-      ? `${comments.length} 条主评论；包含当前可见楼中楼。`
-      : "原站评论尚未加载。播放后同步，或打开原版加载；发送评论会在原站真实发布。";
+    const summary = comments.length
+      ? `${comments.length} 条主评论；包含当前已加载楼中楼。`
+      : notice
+        ? "暂未读取到评论。"
+        : "正在等待原站评论加载…";
+    this.commentStatus!.textContent = notice
+      ? `${summary}\n提示：${notice}`
+      : summary;
     const render = (c: Comment) => {
       const a = el("article", "bo-comment");
       a.append(

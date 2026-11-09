@@ -36,7 +36,8 @@ export function readComments(): Comment[] {
       author: { name: name.textContent?.trim() || "", avatar: "" },
       text,
       time: find("#pubdate,.reply-time,.sub-reply-time")?.textContent || "",
-      likes: Number(find("#like .count,.like-count")?.textContent) || 0,
+      likes:
+        Number(find("#like #count,#like .count,.like-count")?.textContent) || 0,
       images,
       replies: [],
     };
@@ -61,10 +62,82 @@ export function readComments(): Comment[] {
     })
     .filter(Boolean) as Comment[];
 }
+/** Read the native read-access notice, not the login prompt for posting. */
+export function commentNotice() {
+  const host = commentHost();
+  if (!host) return "";
+  return (
+    deepAll("#limit-mask-tip", host.shadowRoot || host)[0]
+      ?.textContent?.trim()
+      .slice(0, 400) || ""
+  );
+}
+/** Watch only the native comment host; route/frame cancellation releases polling. */
+export function watchComments(
+  signal: AbortSignal,
+  onChange: (comments: Comment[], notice: string) => void,
+) {
+  let previous = "";
+  let deadline = Date.now() + 10000;
+  let activated = false;
+  const previousScroll = { x: window.scrollX, y: window.scrollY };
+  let managedScroll: { x: number; y: number } | null = null;
+  const scan = () => {
+    if (signal.aborted) return;
+    const comments = readComments();
+    if (!comments.length && !activated) {
+      const anchor =
+        commentHost() || document.querySelector("#commentapp,#comment");
+      if (anchor) {
+        const rect = anchor.getBoundingClientRect();
+        if (rect.height > 0 || rect.width > 0) {
+          activated = true;
+          if (rect.top >= window.innerHeight || rect.bottom <= 0) {
+            // Let the native lazy loader see its host behind the fixed office UI/player.
+            anchor.scrollIntoView({ block: "start" });
+            managedScroll = { x: window.scrollX, y: window.scrollY };
+          }
+        }
+      }
+    }
+    const notice =
+      commentNotice() ||
+      (!comments.length && Date.now() >= deadline
+        ? "原站评论暂未加载，可点“同步已加载”重试或在原版查看。"
+        : "");
+    const key = JSON.stringify([comments, notice]);
+    if (key !== previous) {
+      previous = key;
+      onChange(comments, notice);
+    }
+  };
+  if (signal.aborted) return () => {};
+  const timer = setInterval(scan, 650);
+  const cleanup = () => {
+    clearInterval(timer);
+    signal.removeEventListener("abort", cleanup);
+    if (
+      managedScroll &&
+      window.scrollX === managedScroll.x &&
+      window.scrollY === managedScroll.y
+    )
+      window.scrollTo(previousScroll.x, previousScroll.y);
+  };
+  signal.addEventListener("abort", cleanup, { once: true });
+  scan();
+  return () => {
+    deadline = Date.now() + 10000;
+    activated = false;
+    previous = "";
+    scan();
+  };
+}
 export async function loadMore(signal: AbortSignal): Promise<Comment[]> {
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   const host = commentHost();
   if (!host) throw Error("原站评论尚未加载，请打开原版视频页。");
+  const restriction = commentNotice();
+  if (restriction) throw Error(`原站提示：${restriction}`);
   const before = JSON.stringify(readComments());
   const button = deepAll(
     "button,.view-more,.reply-more",

@@ -11,7 +11,7 @@ export class PlayerSession {
     host: HTMLElement,
     video: VideoItem,
     onStop: () => void,
-    onComments: (comments: Comment[]) => void,
+    onComments: (comments: Comment[], notice?: string) => void,
     onCommentError: (message: string) => void,
     feishu = false,
   ) {
@@ -110,7 +110,13 @@ export class PlayerSession {
           status.textContent = "自动播放被浏览器阻止，请在播放器中点击播放。";
           break;
         case "comments":
-          if (Array.isArray(e.data.comments)) onComments(e.data.comments);
+          if (Array.isArray(e.data.comments))
+            onComments(
+              e.data.comments,
+              typeof e.data.notice === "string"
+                ? e.data.notice.slice(0, 400)
+                : "",
+            );
           break;
         case "comments:error":
           onCommentError(String(e.data.message));

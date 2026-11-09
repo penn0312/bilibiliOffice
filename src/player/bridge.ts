@@ -1,4 +1,4 @@
-import { readComments, loadMore } from "../adapters/bilibili/comments";
+import { watchComments, loadMore } from "../adapters/bilibili/comments";
 export const CHANNEL = "bilioffice:v1";
 const parents = new Set([
   "https://www.bilibili.com",
@@ -38,7 +38,6 @@ export function startBridge(): () => void {
   const abort = new AbortController();
   let video: HTMLVideoElement | null = null,
     stopped = false,
-    lastComments = "",
     attempted = false;
   const send = (type: string, data: any = {}) =>
     parent.postMessage({ channel: CHANNEL, token, type, ...data }, origin);
@@ -123,13 +122,10 @@ export function startBridge(): () => void {
       }
     }
     sendState();
-    const comments = readComments();
-    const serialized = JSON.stringify(comments);
-    if (serialized !== lastComments) {
-      lastComments = serialized;
-      send("comments", { comments });
-    }
   };
+  const refreshComments = watchComments(abort.signal, (comments, notice) =>
+    send("comments", { comments, notice }),
+  );
   const onMessage = (e: MessageEvent) => {
     if (
       e.origin !== origin ||
@@ -138,12 +134,11 @@ export function startBridge(): () => void {
       e.data?.token !== token
     )
       return;
-    if (e.data.type === "comments:sync")
-      send("comments", { comments: readComments() });
+    if (e.data.type === "comments:sync") refreshComments();
     if (e.data.type === "pause") video?.pause();
     if (e.data.type === "comments:more")
       loadMore(abort.signal).then(
-        (comments) => send("comments", { comments }),
+        () => refreshComments(),
         (err) => send("comments:error", { message: err.message }),
       );
   };

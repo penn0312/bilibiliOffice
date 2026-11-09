@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-09T13:31:10.635Z",
+  "url": "https://www.bilibili.com/video/BV1xx411c7mD/?p=1",
+  "environment": "Chromium clean context, no login",
+  "beforePlay": {
+    "mainComments": 2,
+    "status": "2 条主评论；包含当前已加载楼中楼。\n提示：登录后查看 8.9万+ 条评论",
+    "hasPlayer": false
+  },
+  "afterPlay": {
+    "mainComments": 2,
+    "status": "2 条主评论；包含当前已加载楼中楼。\n提示：登录后查看 8.9万+ 条评论",
+    "hasPlayer": true
+  },
+  "sameFrame": true,
+  "frame": {
+    "scroll": 814,
+    "host": true,
+    "playing": true
+  },
+  "scope": "Read native comment DOM and playback only; no social actions or cookie/token extraction."
+}

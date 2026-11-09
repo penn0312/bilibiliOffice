@@ -1,7 +1,14 @@
 import { chromium } from "playwright";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { home, video, videos, nativeControlsVideo } from "./fixtures/pages.mjs";
+import {
+  home,
+  video,
+  videos,
+  nativeControlsVideo,
+  delayedCommentsVideo,
+  lazyCommentsVideo,
+} from "./fixtures/pages.mjs";
 const source = await readFile("dist/bilioffice.user.js", "utf8");
 const cover = await readFile("tests/fixtures/cover.avif");
 const seekableMedia = await readFile("tests/fixtures/seekable.webm");
@@ -1104,6 +1111,119 @@ for (const origin of [
   );
   await seekPage.close();
 }
+const commentsPage = await context.newPage();
+commentsPage.on("pageerror", (e) => errors.push(e.message));
+await commentsPage.addInitScript(() =>
+  localStorage.setItem(
+    "bilioffice.settings",
+    JSON.stringify({ enabled: true, theme: "wecom", appearance: "light" }),
+  ),
+);
+await commentsPage.route("**/video/**", (route) =>
+  route.fulfill({ contentType: "text/html", body: delayedCommentsVideo }),
+);
+await commentsPage.goto(
+  `https://www.bilibili.com/video/${videos[0].bvid}/?restricted=1`,
+);
+await commentsPage
+  .locator(".bo-comments")
+  .getByText("详情页异步评论正文", { exact: true })
+  .waitFor();
+check(
+  "详情页无需播放即可同步晚到的评论组件及楼中楼",
+  (await commentsPage.locator(".bo-player iframe").count()) === 0 &&
+    (await commentsPage
+      .locator(".bo-comments")
+      .getByText("异步楼中楼", { exact: true })
+      .isVisible()),
+);
+check(
+  "详情页区分原站登录限制与评论尚未加载",
+  (
+    await commentsPage.locator(".bo-comments .bo-status").textContent()
+  ).includes("登录后查看更多评论"),
+);
+await commentsPage
+  .locator(".bo-comments")
+  .getByRole("button", { name: "加载更多", exact: true })
+  .click();
+await commentsPage
+  .locator(".bo-comments .bo-status")
+  .getByText("原站提示：登录后查看更多评论", { exact: true })
+  .waitFor();
+check(
+  "原站限制下不误点加载控件",
+  await commentsPage.evaluate(() => nativeMoreClicks === 0),
+);
+await commentsPage.evaluate(
+  (id) => history.pushState({}, "", `/video/${id}/`),
+  videos[1].bvid,
+);
+await commentsPage
+  .getByText("点击播放后加载当前视频的评论。", { exact: true })
+  .waitFor();
+await commentsPage
+  .locator(".bo-comments")
+  .getByRole("button", { name: "加载更多", exact: true })
+  .click();
+check(
+  "虚拟详情页加载更多也不会读取旧视频评论",
+  (await commentsPage.locator(".bo-comments .bo-status").textContent()) ===
+    "点击播放后加载当前视频的评论。",
+);
+await commentsPage.evaluate(
+  () =>
+    (document
+      .querySelector("bili-comments")
+      .shadowRoot.querySelector(".reply-content").textContent =
+      "旧页面延迟评论"),
+);
+await commentsPage.waitForTimeout(800);
+check(
+  "切换视频后取消原页评论同步且不复用旧评论",
+  (await commentsPage.locator(".bo-comments .bo-comment").count()) === 0 &&
+    (await commentsPage
+      .locator(".bo-comments")
+      .getByText("旧页面延迟评论", { exact: true })
+      .count()) === 0,
+);
+await commentsPage.close();
+const lazyCommentsPage = await context.newPage();
+lazyCommentsPage.on("pageerror", (e) => errors.push(e.message));
+await lazyCommentsPage.addInitScript(() =>
+  localStorage.setItem(
+    "bilioffice.settings",
+    JSON.stringify({ enabled: true, theme: "wecom", appearance: "light" }),
+  ),
+);
+await lazyCommentsPage.route("**/video/**", (route) =>
+  route.fulfill({ contentType: "text/html", body: lazyCommentsVideo }),
+);
+await lazyCommentsPage.goto("https://www.bilibili.com/");
+await lazyCommentsPage.locator(".bo-play").first().click();
+const lazyPlayingFrame = await lazyCommentsPage
+  .locator(".bo-player iframe")
+  .elementHandle();
+await lazyCommentsPage
+  .locator(".bo-comments")
+  .getByText("详情页异步评论正文", { exact: true })
+  .waitFor();
+check(
+  "内嵌页自动触发原站评论懒加载并经桥同步，不重建播放器",
+  (await lazyPlayingFrame.evaluate(
+    (n) => n === document.querySelector(".bo-player iframe"),
+  )) &&
+    (
+      await lazyCommentsPage.locator(".bo-comments .bo-status").textContent()
+    ).includes("登录后查看更多评论"),
+);
+await lazyCommentsPage
+  .locator(".bo-comments")
+  .evaluate((n) => n.scrollIntoView({ block: "center" }));
+await lazyCommentsPage
+  .locator("#bilioffice-root")
+  .screenshot({ path: "docs/screenshots/mock-detail-comments.png" });
+await lazyCommentsPage.close();
 check("模拟页无框架异常", errors.length === 0);
 await writeFile(
   "docs/mock-results.json",

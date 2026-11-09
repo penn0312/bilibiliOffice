@@ -39,3 +39,33 @@ export const nativeControlsVideo = seekableVideo
     "<title>模拟原生视频页</title>",
     "<title>模拟原生视频页</title><style>.bpx-player-container{width:100%;height:100%}.native-hidden-menu{visibility:hidden;position:absolute;inset:0;background:red}</style>",
   );
+
+const commentVideoPrefix = video.slice(
+  0,
+  video.indexOf("const host=document.querySelector('bili-comments')"),
+);
+const renderAsyncComments = `
+window.nativeMoreClicks=0;
+const render=()=>{
+ const root=host.attachShadow({mode:'open'});
+ root.innerHTML='<article class="reply-item"><span class="user-name">异步评论用户</span><div class="reply-content">详情页异步评论正文</div><span class="like-count">12</span><div class="sub-reply-item"><span class="sub-user-name">异步回复用户</span><div class="sub-reply-content">异步楼中楼</div></div></article>';
+ if(location.search.includes('restricted') || window.top!==window.self) root.innerHTML+='<div id="limit-mask-tip">登录后查看更多评论</div>';
+ const more=document.createElement('button'); more.textContent='加载更多'; more.onclick=()=>{window.nativeMoreClicks++}; root.append(more);
+};`;
+export const delayedCommentsVideo =
+  commentVideoPrefix.replace(
+    "<bili-comments></bili-comments>",
+    '<div id="commentapp" style="min-height:200px;margin-top:1400px"></div>',
+  ) +
+  `
+setTimeout(()=>{const host=document.createElement('bili-comments');host.style.display='block';document.querySelector('#commentapp').append(host);${renderAsyncComments}render();},900);
+</script>`;
+export const lazyCommentsVideo =
+  commentVideoPrefix.replace(
+    "<bili-comments></bili-comments>",
+    '<bili-comments style="display:block;min-height:250px;margin-top:1400px"></bili-comments>',
+  ) +
+  `
+const host=document.querySelector('bili-comments');${renderAsyncComments}
+const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();setTimeout(render,200)}});observer.observe(host);
+</script>`;
