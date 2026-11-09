@@ -54,10 +54,12 @@ npm run check
 npm run test:unit
 npm test
 npm run test:live
+npm run test:live:player
 ```
 
 - `npm test` 是**完全拦截网络的模拟页面回归**，使用真实尺寸封面文件和 Canvas 视频流；不冒充真实 B 站播放。结果见 `docs/mock-results.json`，截图前缀 `mock-`。
 - `npm run test:live` 访问真实 B 站，不自动操作任何发布或社交按钮；脚本管理器 HTTP API 使用同一浏览器上下文的请求客户端模拟，尚未安装真实扩展逐一测试。结果见 `docs/live-results.json`，截图前缀 `live-`。
+- `npm run test:live:player` 验证真实 B 站上评论加载后的原生进度条单击、拖动、暂停定位和放大操作，确保无需先返回顶部；结果见 `docs/player-interactions-live-results.json`。
 
 ## 架构
 

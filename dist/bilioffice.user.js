@@ -467,25 +467,37 @@ SOFTWARE.
     let previous = "";
     let deadline = Date.now() + 1e4;
     let activated = false;
-    const previousScroll = { x: window.scrollX, y: window.scrollY };
-    let managedScroll = null;
+    let activationAnchor = null;
+    let activationStyle = null;
+    const releaseAnchor = () => {
+      activationAnchor?.classList.remove("bo-comment-loader");
+      activationAnchor = null;
+      activationStyle?.remove();
+      activationStyle = null;
+    };
     const scan = () => {
       if (signal.aborted) return;
       const comments = readComments();
+      if (activationAnchor && !activationAnchor.isConnected) {
+        releaseAnchor();
+        activated = false;
+      }
       if (!comments.length && !activated) {
         const anchor = commentHost() || document.querySelector("#commentapp,#comment");
         if (anchor) {
           const rect = anchor.getBoundingClientRect();
-          if (rect.height > 0 || rect.width > 0) {
+          if ((rect.height > 0 || rect.width > 0) && (rect.top >= window.innerHeight || rect.bottom <= 0)) {
+            activationAnchor = anchor;
+            activationStyle = document.createElement("style");
+            activationStyle.textContent = ".bo-comment-loader{position:fixed!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;margin:0!important;width:100vw!important;max-width:none!important;min-height:1px!important;visibility:hidden!important;pointer-events:none!important}";
+            document.head.append(activationStyle);
+            anchor.classList.add("bo-comment-loader");
             activated = true;
-            if (rect.top >= window.innerHeight || rect.bottom <= 0) {
-              anchor.scrollIntoView({ block: "start" });
-              managedScroll = { x: window.scrollX, y: window.scrollY };
-            }
           }
         }
       }
       const notice = commentNotice() || (!comments.length && Date.now() >= deadline ? "\u539F\u7AD9\u8BC4\u8BBA\u6682\u672A\u52A0\u8F7D\uFF0C\u53EF\u70B9\u201C\u540C\u6B65\u5DF2\u52A0\u8F7D\u201D\u91CD\u8BD5\u6216\u5728\u539F\u7248\u67E5\u770B\u3002" : "");
+      if (comments.length || notice || Date.now() >= deadline) releaseAnchor();
       const key = JSON.stringify([comments, notice]);
       if (key !== previous) {
         previous = key;
@@ -498,12 +510,12 @@ SOFTWARE.
     const cleanup = () => {
       clearInterval(timer);
       signal.removeEventListener("abort", cleanup);
-      if (managedScroll && window.scrollX === managedScroll.x && window.scrollY === managedScroll.y)
-        window.scrollTo(previousScroll.x, previousScroll.y);
+      releaseAnchor();
     };
     signal.addEventListener("abort", cleanup, { once: true });
     scan();
     return () => {
+      releaseAnchor();
       deadline = Date.now() + 1e4;
       activated = false;
       previous = "";

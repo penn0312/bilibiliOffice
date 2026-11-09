@@ -80,23 +80,39 @@ export function watchComments(
   let previous = "";
   let deadline = Date.now() + 10000;
   let activated = false;
-  const previousScroll = { x: window.scrollX, y: window.scrollY };
-  let managedScroll: { x: number; y: number } | null = null;
+  let activationAnchor: Element | null = null;
+  let activationStyle: HTMLStyleElement | null = null;
+  const releaseAnchor = () => {
+    activationAnchor?.classList.remove("bo-comment-loader");
+    activationAnchor = null;
+    activationStyle?.remove();
+    activationStyle = null;
+  };
   const scan = () => {
     if (signal.aborted) return;
     const comments = readComments();
+    if (activationAnchor && !activationAnchor.isConnected) {
+      releaseAnchor();
+      activated = false;
+    }
     if (!comments.length && !activated) {
       const anchor =
         commentHost() || document.querySelector("#commentapp,#comment");
       if (anchor) {
         const rect = anchor.getBoundingClientRect();
-        if (rect.height > 0 || rect.width > 0) {
+        if (
+          (rect.height > 0 || rect.width > 0) &&
+          (rect.top >= window.innerHeight || rect.bottom <= 0)
+        ) {
+          // Keep the native document's scroll coordinates unchanged: Bilibili's
+          // progress hit testing relies on them even though its player is fixed.
+          activationAnchor = anchor;
+          activationStyle = document.createElement("style");
+          activationStyle.textContent =
+            ".bo-comment-loader{position:fixed!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;margin:0!important;width:100vw!important;max-width:none!important;min-height:1px!important;visibility:hidden!important;pointer-events:none!important}";
+          document.head.append(activationStyle);
+          anchor.classList.add("bo-comment-loader");
           activated = true;
-          if (rect.top >= window.innerHeight || rect.bottom <= 0) {
-            // Let the native lazy loader see its host behind the fixed office UI/player.
-            anchor.scrollIntoView({ block: "start" });
-            managedScroll = { x: window.scrollX, y: window.scrollY };
-          }
         }
       }
     }
@@ -105,6 +121,7 @@ export function watchComments(
       (!comments.length && Date.now() >= deadline
         ? "原站评论暂未加载，可点“同步已加载”重试或在原版查看。"
         : "");
+    if (comments.length || notice || Date.now() >= deadline) releaseAnchor();
     const key = JSON.stringify([comments, notice]);
     if (key !== previous) {
       previous = key;
@@ -116,16 +133,12 @@ export function watchComments(
   const cleanup = () => {
     clearInterval(timer);
     signal.removeEventListener("abort", cleanup);
-    if (
-      managedScroll &&
-      window.scrollX === managedScroll.x &&
-      window.scrollY === managedScroll.y
-    )
-      window.scrollTo(previousScroll.x, previousScroll.y);
+    releaseAnchor();
   };
   signal.addEventListener("abort", cleanup, { once: true });
   scan();
   return () => {
+    releaseAnchor();
     deadline = Date.now() + 10000;
     activated = false;
     previous = "";

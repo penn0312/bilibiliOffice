@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-09T14:03:41.623Z",
+  "environment": "Chromium clean context, no login",
+  "url": "https://www.bilibili.com/video/BV1xx411c7mD/?p=1",
+  "scope": "Native playback clicks, drags, comments and zoom only. No social actions or cookie/token extraction.",
+  "checks": [
+    "评论加载不改变 iframe 滚动坐标",
+    "加载评论后无需回顶即可单击定位并继续播放",
+    "内嵌原生进度条可拖动",
+    "暂停时单击可回退并保持暂停",
+    "放大后单击和拖动均可定位且滚动坐标保持为0",
+    "再次同步评论不会影响原生进度定位",
+    "点击、拖动和放大始终保留同一 iframe"
+  ],
+  "inlineClick": {
+    "time": 88.22388,
+    "paused": false,
+    "scroll": 0
+  },
+  "inlineDrag": {
+    "time": 149.597014,
+    "paused": false,
+    "scroll": 0
+  },
+  "pausedClick": {
+    "time": 57.537313,
+    "paused": true,
+    "scroll": 0
+  },
+  "expandedClick": {
+    "time": 179.415094,
+    "paused": true,
+    "scroll": 0
+  },
+  "expandedDrag": {
+    "time": 239.220125,
+    "paused": true,
+    "scroll": 0
+  },
+  "afterCommentSync": {
+    "time": 118.910447,
+    "paused": false,
+    "scroll": 0
+  }
+}

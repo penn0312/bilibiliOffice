@@ -7,7 +7,7 @@ import {
   videos,
   nativeControlsVideo,
   delayedCommentsVideo,
-  lazyCommentsVideo,
+  lazySeekableCommentsVideo,
 } from "./fixtures/pages.mjs";
 const source = await readFile("dist/bilioffice.user.js", "utf8");
 const cover = await readFile("tests/fixtures/cover.avif");
@@ -1029,6 +1029,26 @@ for (const origin of [
         .locator(".bpx-player-container")
         .evaluate((n) => getComputedStyle(n).visibility === "visible")),
   );
+  const clickNative = async (fraction) => {
+    await nativeVideo.hover();
+    await seekPage.waitForTimeout(200);
+    const box = await nativeVideo.boundingBox();
+    await seekPage.mouse.click(
+      box.x + 16 + (box.width - 32) * fraction,
+      box.y + box.height - 22,
+    );
+    await videoFrame.waitForFunction(
+      (f) => Math.abs(document.querySelector("video").currentTime - 20 * f) < 2,
+      fraction,
+    );
+  };
+  await clickNative(0.45);
+  check(
+    `${origin} 原生进度条单击可跳转且继续播放`,
+    await nativeVideo.evaluate(
+      (v) => !v.paused && v.currentTime > 7 && v.currentTime < 11,
+    ),
+  );
   const dragNative = async (fraction) => {
     await nativeVideo.hover();
     await seekPage.waitForTimeout(200);
@@ -1057,6 +1077,13 @@ for (const origin of [
       )),
   );
   await nativeVideo.evaluate((v) => v.pause());
+  await clickNative(0.2);
+  check(
+    `${origin} 暂停时单击进度条可回退且保持暂停`,
+    await nativeVideo.evaluate(
+      (v) => v.paused && v.currentTime > 2 && v.currentTime < 6,
+    ),
+  );
   await dragNative(0.25);
   check(
     `${origin} 原生进度条后退保持暂停`,
@@ -1067,6 +1094,13 @@ for (const origin of [
   await seekPage
     .getByRole("button", { name: "放大或还原播放器", exact: true })
     .click();
+  await clickNative(0.6);
+  check(
+    `${origin} 放大后单击进度条可跳转`,
+    await nativeVideo.evaluate(
+      (v) => v.paused && v.currentTime > 10 && v.currentTime < 14,
+    ),
+  );
   await dragNative(0.9);
   check(
     `${origin} 放大后原生进度条可拖动且播放器未重建`,
@@ -1089,6 +1123,13 @@ for (const origin of [
       .locator("#bilioffice-root")
       .screenshot({ path: "docs/screenshots/mock-player-native-seek.png" });
     await seekPage.setViewportSize({ width: 390, height: 844 });
+    await clickNative(0.3);
+    check(
+      "手机窄屏单击原生进度条可定位",
+      await nativeVideo.evaluate(
+        (v) => v.paused && v.currentTime > 4 && v.currentTime < 8,
+      ),
+    );
     await dragNative(0.55);
     check(
       "手机窄屏原生进度条可拖动且画面保持16:9",
@@ -1197,8 +1238,18 @@ await lazyCommentsPage.addInitScript(() =>
   ),
 );
 await lazyCommentsPage.route("**/video/**", (route) =>
-  route.fulfill({ contentType: "text/html", body: lazyCommentsVideo }),
+  route.fulfill({ contentType: "text/html", body: lazySeekableCommentsVideo }),
 );
+await lazyCommentsPage.addInitScript(() => {
+  window.nativeScrollPositions = [];
+  document.addEventListener(
+    "scroll",
+    (event) => {
+      if (event.target === document) window.nativeScrollPositions.push(scrollY);
+    },
+    true,
+  );
+});
 await lazyCommentsPage.goto("https://www.bilibili.com/");
 await lazyCommentsPage.locator(".bo-play").first().click();
 const lazyPlayingFrame = await lazyCommentsPage
@@ -1216,6 +1267,50 @@ check(
     (
       await lazyCommentsPage.locator(".bo-comments .bo-status").textContent()
     ).includes("登录后查看更多评论"),
+);
+const lazyFrame = lazyCommentsPage
+  .frames()
+  .find((f) => f.url().includes("boToken"));
+await lazyFrame.waitForFunction(
+  () => scrollY === 0 && document.querySelector("video").seekable.length > 0,
+);
+check(
+  "评论懒加载不改变原生页面滚动坐标，无需返回顶部",
+  await lazyFrame.evaluate(
+    () => scrollY === 0 && window.nativeScrollPositions.every((y) => y === 0),
+  ),
+);
+const lazyVideo = lazyFrame.locator("video");
+await lazyVideo.hover();
+await lazyCommentsPage.waitForTimeout(200);
+const lazyTrack = await lazyVideo.boundingBox();
+const lazyY = lazyTrack.y + lazyTrack.height - 22;
+const lazyLeft = lazyTrack.x + 16,
+  lazyWidth = lazyTrack.width - 32;
+await lazyCommentsPage.mouse.click(lazyLeft + lazyWidth * 0.65, lazyY);
+await lazyFrame.waitForFunction(
+  () => document.querySelector("video").currentTime > 11,
+);
+check(
+  "评论自动加载后可直接单击原生进度条跳转",
+  await lazyVideo.evaluate(
+    (v) => !v.paused && v.currentTime > 11 && v.currentTime < 15,
+  ),
+);
+await lazyCommentsPage.mouse.move(lazyLeft + lazyWidth * 0.65, lazyY);
+await lazyCommentsPage.mouse.down();
+await lazyCommentsPage.mouse.move(lazyLeft + lazyWidth * 0.35, lazyY, {
+  steps: 12,
+});
+await lazyCommentsPage.mouse.up();
+await lazyFrame.waitForFunction(
+  () => Math.abs(document.querySelector("video").currentTime - 7) < 2,
+);
+check(
+  "评论自动加载后拖动进度条不重建播放器",
+  (await lazyPlayingFrame.evaluate(
+    (n) => n === document.querySelector(".bo-player iframe"),
+  )) && (await lazyFrame.evaluate(() => scrollY === 0)),
 );
 await lazyCommentsPage
   .locator(".bo-comments")

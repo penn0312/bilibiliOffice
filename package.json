@@ -13,7 +13,8 @@
     "test:live": "node tests/live.mjs",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"scripts/*.mjs\" \"tests/*.mjs\"",
     "pretest": "npm run build",
-    "pretest:live": "npm run build"
+    "pretest:live": "npm run build",
+    "test:live:player": "npm run build && node tests/native-player-interactions-live.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

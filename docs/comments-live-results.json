@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-09T13:31:10.635Z",
+  "date": "2026-11-09T14:06:24.380Z",
   "url": "https://www.bilibili.com/video/BV1xx411c7mD/?p=1",
   "environment": "Chromium clean context, no login",
   "beforePlay": {
@@ -14,7 +14,7 @@
   },
   "sameFrame": true,
   "frame": {
-    "scroll": 814,
+    "scroll": 0,
     "host": true,
     "playing": true
   },

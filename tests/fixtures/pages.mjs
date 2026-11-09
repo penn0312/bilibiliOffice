@@ -69,3 +69,14 @@ export const lazyCommentsVideo =
 const host=document.querySelector('bili-comments');${renderAsyncComments}
 const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();setTimeout(render,200)}});observer.observe(host);
 </script>`;
+
+// The lazy comment host and finite media share one iframe for seeking regressions.
+export const lazySeekableCommentsVideo = lazyCommentsVideo
+  .replace(
+    "<video controls muted",
+    '<video controls muted src="/bilioffice-seekable.webm"',
+  )
+  .replace(
+    "document.querySelector('video').srcObject=canvas.captureStream(25);",
+    "",
+  );
