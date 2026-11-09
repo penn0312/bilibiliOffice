@@ -14,3 +14,14 @@ const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360
 const host=document.querySelector('bili-comments');const root=host.attachShadow({mode:'open'});root.innerHTML='<div class="reply-item"><span class="user-name">主评论用户</span><span class="reply-content">真实异步 DOM 评论<img src="https://i0.hdslb.com/bilioffice-test-cover"></span><div class="sub-reply-item"><span class="sub-user-name">回复用户</span><span class="sub-reply-content">楼中楼正文</span></div></div><button>加载更多</button>';
 root.querySelector('button').onclick=()=>setTimeout(()=>{const r=document.createElement('div');r.className='reply-item';r.innerHTML='<span class="user-name">新用户</span><span class="reply-content">延迟加载的评论</span>';root.prepend(r)},500);
 </script>`;
+
+// A finite local media file exercises real currentTime seeking; Canvas streams cannot seek.
+export const seekableVideo = video
+  .replace(
+    "<video controls muted",
+    '<video controls muted src="/bilioffice-seekable.webm"',
+  )
+  .replace(
+    "document.querySelector('video').srcObject=canvas.captureStream(25);",
+    "",
+  );

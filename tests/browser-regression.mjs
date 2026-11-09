@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { home, video, videos } from "./fixtures/pages.mjs";
+import { home, video, videos, seekableVideo } from "./fixtures/pages.mjs";
 const source = await readFile("dist/bilioffice.user.js", "utf8");
 const cover = await readFile("tests/fixtures/cover.avif");
+const seekableMedia = await readFile("tests/fixtures/seekable.webm");
 await mkdir("docs/screenshots", { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({
@@ -18,6 +19,30 @@ const check = (name, value) => {
 };
 await context.route("**/*", async (r) => {
   const u = new URL(r.request().url());
+  if (
+    u.hostname === "www.bilibili.com" &&
+    u.pathname === "/bilioffice-seekable.webm"
+  ) {
+    const range = r
+      .request()
+      .headers()
+      .range?.match(/^bytes=(\d+)-(\d*)$/);
+    const start = range ? Number(range[1]) : 0;
+    const end = range?.[2]
+      ? Math.min(Number(range[2]), seekableMedia.length - 1)
+      : seekableMedia.length - 1;
+    return r.fulfill({
+      status: range ? 206 : 200,
+      contentType: "video/webm",
+      headers: {
+        "accept-ranges": "bytes",
+        ...(range
+          ? { "content-range": `bytes ${start}-${end}/${seekableMedia.length}` }
+          : {}),
+      },
+      body: seekableMedia.subarray(start, end + 1),
+    });
+  }
   if (u.hostname === "i0.hdslb.com")
     return r.fulfill({ contentType: "image/avif", body: cover });
   if (u.hostname === "api.bilibili.com") {
@@ -405,6 +430,12 @@ await page.waitForFunction(
   () => Number(document.querySelector(".bo-inline-player")?.dataset.time) > 0.2,
 );
 check("Canvas 模拟视频播放进度实际增长", true);
+check(
+  "没有可定位区间的媒体禁用进度拖动",
+  await page
+    .getByRole("slider", { name: "播放进度", exact: true })
+    .isDisabled(),
+);
 await page.evaluate(() => {
   window.savedFrame = document.querySelector(".bo-player iframe");
   window.removed = false;
@@ -949,6 +980,158 @@ check(
     (await fitPage.locator(".bo-message[data-video-id]").count()) === 2,
 );
 await fitPage.close();
+for (const origin of [
+  "https://www.bilibili.com",
+  "https://search.bilibili.com",
+]) {
+  const seekPage = await context.newPage();
+  seekPage.on("pageerror", (e) => errors.push(e.message));
+  await seekPage.addInitScript(() =>
+    localStorage.setItem(
+      "bilioffice.settings",
+      JSON.stringify({ enabled: true, theme: "wecom", appearance: "light" }),
+    ),
+  );
+  await seekPage.route("**/video/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: seekableVideo }),
+  );
+  await seekPage.goto(
+    origin === "https://www.bilibili.com"
+      ? origin + "/"
+      : origin + "/all?keyword=视频",
+  );
+  await seekPage.locator(".bo-play").first().click();
+  const slider = seekPage.getByRole("slider", {
+    name: "播放进度",
+    exact: true,
+  });
+  await seekPage.waitForFunction(
+    () =>
+      document.querySelector(".bo-playback-progress")?.disabled === false &&
+      Number(document.querySelector(".bo-inline-player")?.dataset.time) > 0.1,
+  );
+  const videoFrame = seekPage
+    .frames()
+    .find((frame) => frame.url().includes("boToken"));
+  const frameNode = await seekPage.locator(".bo-player iframe").elementHandle();
+  const track = await slider.boundingBox();
+  await seekPage.mouse.move(
+    track.x + track.width * 0.2,
+    track.y + track.height / 2,
+  );
+  await seekPage.mouse.down();
+  await seekPage.mouse.move(
+    track.x + track.width * 0.75,
+    track.y + track.height / 2,
+    { steps: 12 },
+  );
+  const preview = Number(await slider.inputValue());
+  await seekPage.waitForTimeout(750);
+  check(
+    `${origin} 拖动预览不会被播放状态覆盖，松开前不跳转`,
+    preview > 13 &&
+      Math.abs(Number(await slider.inputValue()) - preview) < 0.2 &&
+      (await videoFrame.locator("video").evaluate((v) => v.currentTime < 8)),
+  );
+  await seekPage.mouse.up();
+  await seekPage.waitForFunction(
+    (target) =>
+      Math.abs(
+        Number(document.querySelector(".bo-inline-player")?.dataset.time) -
+          target,
+      ) < 1,
+    preview,
+  );
+  check(
+    `${origin} 松开进度条定位真实媒体并保持播放`,
+    (await videoFrame
+      .locator("video")
+      .evaluate((v) => !v.paused && v.currentTime > 13)) &&
+      (await frameNode.evaluate(
+        (frame) => frame === document.querySelector(".bo-player iframe"),
+      )),
+  );
+  await videoFrame.locator("video").evaluate((v) => v.pause());
+  await seekPage.waitForFunction(
+    () =>
+      document.querySelector(".bo-inline-player")?.dataset.paused === "true",
+  );
+  await slider.focus();
+  await slider.press("Home");
+  await slider.press("ArrowRight");
+  await seekPage.waitForFunction(
+    () => Number(document.querySelector(".bo-inline-player")?.dataset.time) < 1,
+  );
+  check(
+    `${origin} 键盘拖动保持暂停并可回退到开头`,
+    await videoFrame
+      .locator("video")
+      .evaluate((v) => v.paused && v.currentTime < 1),
+  );
+  check(
+    `${origin} 拒绝伪造及非法跳转消息`,
+    await videoFrame.evaluate(() => {
+      const v = document.querySelector("video"),
+        before = v.currentTime;
+      const u = new URL(location.href),
+        token = u.searchParams.get("boToken"),
+        parentOrigin = u.searchParams.get("boParent");
+      const data = {
+        channel: "bilioffice:v1",
+        token,
+        type: "seek",
+        time: 14,
+        requestId: 1000,
+      };
+      for (const event of [
+        { origin: "https://evil.example", source: parent, data },
+        { origin: parentOrigin, source: window, data },
+        {
+          origin: parentOrigin,
+          source: parent,
+          data: { ...data, token: "wrong" },
+        },
+        { origin: parentOrigin, source: parent, data: { ...data, time: NaN } },
+        { origin: parentOrigin, source: parent, data: { ...data, time: -1 } },
+      ])
+        window.dispatchEvent(new MessageEvent("message", event));
+      return v.currentTime === before && v.paused;
+    }),
+  );
+  await seekPage
+    .getByRole("button", { name: "放大或还原播放器", exact: true })
+    .click();
+  await slider.press("End");
+  await seekPage.waitForFunction(
+    () =>
+      Number(document.querySelector(".bo-inline-player")?.dataset.time) > 19,
+  );
+  check(
+    `${origin} 放大后进度条可用且沿用同一播放器`,
+    (await slider.isVisible()) &&
+      (await frameNode.evaluate(
+        (frame) => frame === document.querySelector(".bo-player iframe"),
+      )),
+  );
+  await seekPage.keyboard.press("Escape");
+  await seekPage
+    .locator(".bo-player")
+    .evaluate((player) => player.scrollIntoView({ block: "center" }));
+  if (origin === "https://www.bilibili.com")
+    await seekPage
+      .locator("#bilioffice-root")
+      .screenshot({ path: "docs/screenshots/mock-player-seek.png" });
+  await seekPage
+    .locator(".bo-inline-player > .bo-player-actions")
+    .getByRole("button", { name: "关闭", exact: true })
+    .click();
+  check(
+    `${origin} 关闭后移除进度控件和播放 iframe`,
+    (await seekPage.locator(".bo-playback-bar, .bo-player iframe").count()) ===
+      0,
+  );
+  await seekPage.close();
+}
 check("模拟页无框架异常", errors.length === 0);
 await writeFile(
   "docs/mock-results.json",

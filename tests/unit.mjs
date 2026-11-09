@@ -18,7 +18,7 @@ await build({
 });
 globalThis.location = new URL("https://www.bilibili.com/");
 const a = await import("../work/adapter.mjs");
-const { validMessage } = await import("../work/bridge.mjs");
+const { validMessage, clampSeekTime } = await import("../work/bridge.mjs");
 assert.equal(a.safeURL(""), "");
 assert.equal(a.safeURL("javascript:alert(1)"), "");
 assert.equal(
@@ -61,6 +61,77 @@ assert.ok(!validMessage(base, frame, "wrong"));
 assert.ok(
   !validMessage(
     { ...base, data: { ...base.data, type: "unknown" } },
+    frame,
+    "secret",
+  ),
+);
+const ranges = (segments) => ({
+  length: segments.length,
+  start: (i) => segments[i][0],
+  end: (i) => segments[i][1],
+});
+assert.equal(clampSeekTime(6, ranges([[0, 20]])), 6);
+assert.equal(clampSeekTime(100, ranges([[0, 20]])), 20);
+assert.equal(clampSeekTime(0, ranges([[5, 20]])), 5);
+assert.equal(
+  clampSeekTime(
+    8,
+    ranges([
+      [0, 5],
+      [10, 20],
+    ]),
+  ),
+  10,
+);
+assert.equal(
+  clampSeekTime(
+    6,
+    ranges([
+      [0, 5],
+      [10, 20],
+    ]),
+  ),
+  5,
+);
+assert.equal(clampSeekTime(1, ranges([])), null);
+for (const time of [-1, NaN, Infinity, "10"])
+  assert.equal(clampSeekTime(time, ranges([[0, 20]])), null);
+const state = {
+  ...base,
+  data: {
+    ...base.data,
+    type: "state",
+    time: 1,
+    duration: 20,
+    seekStart: 0,
+    seekEnd: 20,
+    paused: false,
+  },
+};
+assert.ok(validMessage(state, frame, "secret"));
+for (const invalid of [
+  { time: NaN },
+  { duration: Infinity },
+  { seekStart: -1 },
+  { seekStart: 21 },
+  { paused: "false" },
+]) {
+  assert.ok(
+    !validMessage(
+      { ...state, data: { ...state.data, ...invalid } },
+      frame,
+      "secret",
+    ),
+  );
+}
+const seekResult = {
+  ...state,
+  data: { ...state.data, type: "seek:result", requestId: 1, ok: true },
+};
+assert.ok(validMessage(seekResult, frame, "secret"));
+assert.ok(
+  !validMessage(
+    { ...seekResult, data: { ...seekResult.data, requestId: "1" } },
     frame,
     "secret",
   ),
