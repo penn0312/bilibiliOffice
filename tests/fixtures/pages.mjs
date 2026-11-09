@@ -25,3 +25,17 @@ export const seekableVideo = video
     "document.querySelector('video').srcObject=canvas.captureStream(25);",
     "",
   );
+
+export const nativeControlsVideo = seekableVideo
+  .replace(
+    '<div id="bilibili-player"><video',
+    '<div id="bilibili-player"><div class="bpx-player-container"><video',
+  )
+  .replace(
+    "</video></div><bili-comments>",
+    '</video><div class="native-hidden-menu">原站隐藏菜单</div></div></div><bili-comments>',
+  )
+  .replace(
+    "<title>模拟原生视频页</title>",
+    "<title>模拟原生视频页</title><style>.bpx-player-container{width:100%;height:100%}.native-hidden-menu{visibility:hidden;position:absolute;inset:0;background:red}</style>",
+  );

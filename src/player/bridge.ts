@@ -12,29 +12,6 @@ export function bridgeParams() {
     origin: u.searchParams.get("boParent"),
   };
 }
-/** Clamp to the nearest seekable segment, including gaps in the media timeline. */
-export function clampSeekTime(time: number, ranges: TimeRanges): number | null {
-  if (!Number.isFinite(time) || time < 0) return null;
-  let closest: number | null = null;
-  let distance = Infinity;
-  for (let i = 0; i < Math.min(ranges.length, 32); i++) {
-    const start = ranges.start(i),
-      end = ranges.end(i);
-    if (
-      !Number.isFinite(start) ||
-      !Number.isFinite(end) ||
-      start < 0 ||
-      end <= start
-    )
-      continue;
-    const target = Math.max(start, Math.min(time, end));
-    if (Math.abs(target - time) < distance) {
-      closest = target;
-      distance = Math.abs(target - time);
-    }
-  }
-  return closest;
-}
 function validState(data: any) {
   return (
     Number.isFinite(data.time) &&
@@ -66,8 +43,27 @@ export function startBridge(): () => void {
   const send = (type: string, data: any = {}) =>
     parent.postMessage({ channel: CHANNEL, token, type, ...data }, origin);
   const style = document.createElement("style");
-  style.textContent =
-    "html,body{margin:0;background:#111;overflow:hidden}body>*{visibility:hidden}#bilibili-player,.bpx-player-container{visibility:visible;position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483646}#bilibili-player *,.bpx-player-container *{visibility:visible}";
+  // Reveal only the player root. Descendants retain Bilibili's own hover,
+  // menu and control visibility rules, so hidden layers cannot cover seeking.
+  style.textContent = `
+    html,body{margin:0;background:#111;overflow:hidden}
+    body>*{visibility:hidden}
+    html body .bo-native-player{
+      visibility:visible!important;position:fixed!important;inset:0!important;
+      width:100vw!important;height:100vh!important;max-width:none!important;
+      max-height:none!important;box-sizing:border-box!important;z-index:2147483646
+    }
+    .bo-native-player .bpx-player-sending-bar{display:none!important}
+    .bo-native-player .bpx-player-video-area{height:100%!important}
+    .bo-native-player:hover .bpx-player-control-entity,
+    .bo-native-player:focus-within .bpx-player-control-entity,
+    .bo-native-player:hover .bpx-player-control-mask,
+    .bo-native-player:focus-within .bpx-player-control-mask{display:block!important}
+    .bo-native-player:hover .bpx-player-control-bottom,
+    .bo-native-player:focus-within .bpx-player-control-bottom,
+    .bo-native-player:hover .bpx-player-control-mask,
+    .bo-native-player:focus-within .bpx-player-control-mask{opacity:1!important}
+  `;
   document.head.append(style);
   let detachVideo = () => {};
   const state = () => ({
@@ -96,6 +92,13 @@ export function startBridge(): () => void {
     if (next && next !== video) {
       detachVideo();
       video = next;
+      const nativeRoot = next.closest<HTMLElement>(
+        ".bpx-player-container, #bilibili-player",
+      );
+      const root = nativeRoot || next;
+      const hadControls = next.controls;
+      if (!nativeRoot) next.controls = true;
+      root.classList.add("bo-native-player");
       const events = [
         "loadedmetadata",
         "durationchange",
@@ -110,6 +113,8 @@ export function startBridge(): () => void {
       for (const event of events) next.addEventListener(event, sendState);
       detachVideo = () => {
         for (const event of events) next.removeEventListener(event, sendState);
+        root.classList.remove("bo-native-player");
+        if (!nativeRoot) next.controls = hadControls;
       };
       send("ready");
       if (!attempted) {
@@ -133,26 +138,6 @@ export function startBridge(): () => void {
       e.data?.token !== token
     )
       return;
-    if (e.data.type === "seek") {
-      if (
-        !Number.isSafeInteger(e.data.requestId) ||
-        e.data.requestId <= 0 ||
-        !Number.isFinite(e.data.time) ||
-        e.data.time < 0
-      )
-        return;
-      const target = video ? clampSeekTime(e.data.time, video.seekable) : null;
-      let ok = false;
-      if (video && target !== null) {
-        try {
-          video.currentTime = target;
-          ok = true;
-        } catch {
-          /* Media may have been detached during a part change. */
-        }
-      }
-      send("seek:result", { ...state(), requestId: e.data.requestId, ok });
-    }
     if (e.data.type === "comments:sync")
       send("comments", { comments: readComments() });
     if (e.data.type === "pause") video?.pause();
@@ -166,7 +151,7 @@ export function startBridge(): () => void {
     if (e.key === "Escape") send("escape");
   };
   window.addEventListener("message", onMessage);
-  document.addEventListener("keydown", onKey);
+  document.addEventListener("keydown", onKey, true);
   const timer = setInterval(inspect, 650);
   inspect();
   const cleanup = () => {
@@ -177,7 +162,7 @@ export function startBridge(): () => void {
     detachVideo();
     video?.pause();
     window.removeEventListener("message", onMessage);
-    document.removeEventListener("keydown", onKey);
+    document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("pagehide", cleanup);
     style.remove();
   };
@@ -201,12 +186,7 @@ export function validMessage(
       "comments",
       "comments:error",
       "escape",
-      "seek:result",
     ].includes(e.data?.type) &&
-    (!["state", "seek:result"].includes(e.data.type) || validState(e.data)) &&
-    (e.data.type !== "seek:result" ||
-      (typeof e.data.ok === "boolean" &&
-        Number.isSafeInteger(e.data.requestId) &&
-        e.data.requestId > 0))
+    (e.data.type !== "state" || validState(e.data))
   );
 }

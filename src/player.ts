@@ -32,22 +32,7 @@ export class PlayerSession {
     url.searchParams.set("boToken", token);
     url.searchParams.set("boParent", location.origin);
     frame.src = url.href;
-    const progress = document.createElement("input");
-    progress.type = "range";
-    progress.className = "bo-playback-progress";
-    progress.setAttribute("aria-label", "播放进度");
-    progress.min = "0";
-    progress.max = "0";
-    progress.step = "0.1";
-    progress.value = "0";
-    progress.disabled = true;
-    const clock = document.createElement("output");
-    clock.className = "bo-playback-time";
-    clock.textContent = "00:00 / --:--";
-    const transport = document.createElement("div");
-    transport.className = "bo-playback-bar";
-    transport.append(progress, clock);
-    player.append(frame, transport);
+    player.append(frame);
     const status = document.createElement("div");
     status.className = "bo-player-status";
     status.setAttribute("role", "status");
@@ -61,92 +46,6 @@ export class PlayerSession {
       b.onclick = fn;
       actions.append(b);
       return b;
-    };
-    type PlaybackState = {
-      time: number;
-      duration: number;
-      paused: boolean;
-      seekStart: number;
-      seekEnd: number;
-    };
-    let lastState: PlaybackState | null = null;
-    let scrubbing = false;
-    let seekRequest = 0;
-    let pendingSeek: number | null = null;
-    let seekTimeout: ReturnType<typeof setTimeout> | undefined;
-    const formatTime = (time: number) => {
-      const seconds = Math.max(0, Math.floor(time));
-      const h = Math.floor(seconds / 3600);
-      return `${h ? h + ":" : ""}${String(Math.floor(seconds / 60) % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-    };
-    const showTime = (time: number) => {
-      const total = lastState?.duration
-        ? formatTime(lastState.duration)
-        : "--:--";
-      clock.textContent = `${formatTime(time)} / ${total}`;
-      progress.setAttribute("aria-valuetext", `${formatTime(time)} / ${total}`);
-    };
-    const updateState = (state: PlaybackState) => {
-      lastState = state;
-      host.dataset.time = String(state.time);
-      host.dataset.paused = String(state.paused);
-      host.dataset.duration = String(state.duration);
-      progress.disabled = state.seekEnd <= state.seekStart;
-      if (scrubbing || pendingSeek !== null) return;
-      progress.min = String(state.seekStart);
-      progress.max = String(state.seekEnd);
-      progress.value = String(
-        Math.max(state.seekStart, Math.min(state.time, state.seekEnd)),
-      );
-      showTime(state.time);
-    };
-    const resetProgress = () => {
-      clearTimeout(seekTimeout);
-      seekRequest++;
-      pendingSeek = null;
-      scrubbing = false;
-      lastState = null;
-      progress.disabled = true;
-      progress.min = "0";
-      progress.max = "0";
-      progress.value = "0";
-      host.dataset.time = "0";
-      host.dataset.duration = "0";
-      host.dataset.paused = "true";
-      showTime(0);
-    };
-    progress.onpointerdown = () => {
-      scrubbing = true;
-    };
-    progress.onpointerup = () => {
-      scrubbing = false;
-    };
-    progress.onpointercancel = () => {
-      scrubbing = false;
-      if (lastState && pendingSeek === null) updateState(lastState);
-    };
-    progress.oninput = () => {
-      scrubbing = true;
-      showTime(Number(progress.value));
-    };
-    progress.onchange = () => {
-      if (progress.disabled) return;
-      scrubbing = false;
-      const time = Number(progress.value);
-      if (!Number.isFinite(time)) return;
-      const requestId = ++seekRequest;
-      pendingSeek = requestId;
-      clearTimeout(seekTimeout);
-      seekTimeout = setTimeout(() => {
-        if (pendingSeek !== requestId) return;
-        pendingSeek = null;
-        status.textContent = "定位超时，请重试。";
-        if (lastState) updateState(lastState);
-      }, 8000);
-      frame.contentWindow?.postMessage(
-        { channel: CHANNEL, token, type: "seek", time, requestId },
-        "https://www.bilibili.com",
-      );
     };
     let large = false;
     const backdrop = document.createElement("div");
@@ -167,7 +66,9 @@ export class PlayerSession {
     );
     button("重试", () => {
       ready = false;
-      resetProgress();
+      host.dataset.time = "0";
+      host.dataset.paused = "true";
+      host.dataset.duration = "0";
       status.textContent = feishu
         ? "正在重新加载视频…"
         : "正在重新加载原生播放器…";
@@ -200,18 +101,10 @@ export class PlayerSession {
             : "原生播放器已就绪；使用播放器控制播放";
           break;
         case "state":
-          if (ready) updateState(e.data);
-          break;
-        case "seek:result":
-          if (!ready || pendingSeek !== e.data.requestId) break;
-          clearTimeout(seekTimeout);
-          pendingSeek = null;
-          updateState(e.data);
-          status.textContent = e.data.ok
-            ? e.data.paused
-              ? "已定位，视频已暂停"
-              : "已定位，继续播放"
-            : "当前视频暂时无法定位，请稍后重试。";
+          if (!ready) break;
+          host.dataset.time = String(e.data.time);
+          host.dataset.paused = String(e.data.paused);
+          host.dataset.duration = String(e.data.duration);
           break;
         case "blocked":
           status.textContent = "自动播放被浏览器阻止，请在播放器中点击播放。";
@@ -244,7 +137,6 @@ export class PlayerSession {
       );
     this.cleanup = () => {
       clearTimeout(timeout);
-      clearTimeout(seekTimeout);
       window.removeEventListener("message", handler);
       window.removeEventListener("keydown", onKey);
       frame.remove();
