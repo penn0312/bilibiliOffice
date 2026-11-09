@@ -71,7 +71,7 @@ for (const [name, url] of [
     result.status = await p.locator(".bo-status").allTextContents();
     for (const theme of ["wecom", "dingtalk", "feishu"]) {
       await p.getByRole("button", { name: "⚙ 设置", exact: true }).click();
-      await p.locator("[data-setting=theme]").selectOption(theme);
+      await p.locator(`[data-setting=theme] [data-value="${theme}"]`).click();
       await p
         .locator(".bo-settings")
         .getByRole("button", { name: "关闭", exact: true })

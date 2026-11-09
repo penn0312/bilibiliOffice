@@ -1,6 +1,7 @@
 html.bilioffice-active {
   overflow: hidden;
 }
+
 #bilioffice-root [hidden] {
   display: none;
 }
@@ -170,9 +171,820 @@ html.bilioffice-active {
   }
 }
 
+/* Feishu desktop shell: the reference uses one wide navigation rail, one
+   conversation column, and an uncluttered chat canvas. */
+#bilioffice-root[data-theme="feishu"] .bo-app-rail {
+  width: 180px;
+  align-items: stretch;
+  padding: 14px 10px 12px;
+  background: var(--bo-feishu-rail);
+  color: var(--bo-text);
+  border-right: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand {
+  width: auto;
+  height: 42px;
+  margin: 0 8px 10px;
+  padding: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--bo-text);
+  font-size: 14px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-brand-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f4b83f;
+  font-size: 15px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand::after {
+  content: "飞书工作台";
+  font-weight: 600;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-search {
+  order: 0;
+  display: flex;
+  width: 100%;
+  max-width: none;
+  margin: 0 0 10px;
+  padding: 0;
+  background: transparent;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-search input {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  padding: 7px 10px 7px 30px;
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  background: var(--bo-side);
+  color: var(--bo-text);
+  font-size: 12px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-search::before {
+  content: "⌕";
+  position: absolute;
+  z-index: 1;
+  margin: 7px 0 0 10px;
+  color: var(--bo-muted);
+  font-size: 16px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-search button {
+  display: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav {
+  align-items: stretch;
+  gap: 2px;
+  padding: 0;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav button {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--bo-muted);
+  font-size: 18px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav button.active {
+  color: var(--bo-accent);
+  background: var(--bo-panel);
+  box-shadow: 0 1px 2px #1f23290d;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-label,
+#bilioffice-root[data-theme="feishu"] .bo-rail-static {
+  display: block;
+  font-size: 14px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static {
+  min-height: 38px;
+  padding: 8px 10px 8px 42px;
+  border-radius: 8px;
+  color: var(--bo-muted);
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:hover {
+  background: var(--bo-side);
+  color: var(--bo-text);
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static::before {
+  position: absolute;
+  margin-left: -25px;
+  color: var(--bo-muted);
+  font-size: 16px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(2)::before {
+  content: "□";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(3)::before {
+  content: "•";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(4)::before {
+  content: "▤";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(5)::before {
+  content: "▣";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(6)::before {
+  content: "✓";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(7)::before {
+  content: "♙";
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:nth-of-type(8)::before {
+  content: "⌗";
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar {
+  width: 300px;
+  display: block;
+  background: var(--bo-side);
+  border-right: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-group-nav {
+  display: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-head {
+  height: 44px;
+  padding: 0 14px;
+  gap: 4px;
+  border-bottom: 0;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-head strong,
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-head > span {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 11px;
+  border-radius: 14px;
+  font-size: 13px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-head strong {
+  background: var(--bo-panel);
+  color: var(--bo-text);
+  box-shadow: 0 1px 3px #1f23291a;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-head > span {
+  color: var(--bo-muted);
+  background: var(--bo-side);
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar-search {
+  display: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-conversation {
+  margin: 0;
+  padding: 9px 12px;
+  border-left: 0;
+  border-radius: 0;
+  background: var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-local-conversations {
+  padding: 8px 0 0;
+  border-top: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-local-label {
+  padding: 5px 14px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-local-row {
+  padding: 8px 12px;
+  border-radius: 0;
+}
+#bilioffice-root[data-theme="feishu"] .bo-local-row:hover {
+  background: var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-main {
+  background: var(--bo-panel);
+}
+#bilioffice-root[data-theme="feishu"] .bo-header {
+  height: 56px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-header h1 {
+  font-size: 16px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-chat {
+  padding: 20px 28px 28px;
+  background: var(--bo-panel);
+}
+#bilioffice-root[data-theme="feishu"] .bo-toolbar {
+  margin-bottom: 20px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-message {
+  margin-bottom: 22px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-message-content {
+  width: min(520px, calc(100% - 48px));
+}
+#bilioffice-root[data-theme="feishu"] .bo-bubble {
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--bo-bubble);
+  box-shadow: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-video-card {
+  width: min(440px, 100%);
+  border-radius: 8px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-info-panel {
+  display: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-composer {
+  padding: 10px 28px 12px;
+  background: var(--bo-panel);
+}
+
 @media (prefers-color-scheme: dark) {
   #bilioffice-root[data-appearance="system"] .bo-nav button.active,
   #bilioffice-root[data-appearance="system"] .bo-conversation {
     background: #283850;
   }
+}
+
+/* Desktop client shell: app rail, conversation list, chat workspace. */
+#bilioffice-root .bo-app-rail {
+  width: 64px;
+  background: color-mix(in srgb, var(--bo-accent) 86%, #1b2733);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  z-index: 5;
+}
+#bilioffice-root .bo-rail-brand {
+  width: 40px;
+  height: 40px;
+  margin: 14px 0 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #ffffff2b;
+  font-size: 20px;
+}
+#bilioffice-root .bo-rail-nav,
+#bilioffice-root .bo-rail-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+#bilioffice-root .bo-rail-nav button,
+#bilioffice-root .bo-rail-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  color: #ffffffb8;
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+}
+#bilioffice-root .bo-rail-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  text-align: left;
+  padding: 0 14px;
+}
+#bilioffice-root .bo-rail-label,
+#bilioffice-root .bo-rail-static {
+  display: none;
+  font-size: 14px;
+  white-space: nowrap;
+}
+#bilioffice-root .bo-rail-static {
+  width: 100%;
+  min-height: 33px;
+  padding: 7px 18px;
+  color: color-mix(in srgb, var(--bo-text) 75%, var(--bo-muted));
+}
+#bilioffice-root .bo-rail-nav button:hover,
+#bilioffice-root .bo-rail-nav button.active,
+#bilioffice-root .bo-rail-button:hover {
+  color: #fff;
+  background: #ffffff2b;
+}
+#bilioffice-root .bo-rail-footer {
+  margin-top: auto;
+  margin-bottom: 14px;
+}
+#bilioffice-root .bo-sidebar {
+  width: 252px;
+  background: var(--bo-side);
+  border-right: 1px solid var(--bo-border);
+}
+#bilioffice-root .bo-conversation-pane {
+  min-width: 0;
+  flex: 1;
+}
+#bilioffice-root .bo-group-nav {
+  display: none;
+}
+#bilioffice-root .bo-sidebar-head {
+  height: 62px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--bo-border);
+}
+#bilioffice-root .bo-sidebar-head strong {
+  font-size: 16px;
+}
+#bilioffice-root .bo-sidebar-head > span {
+  color: var(--bo-muted);
+}
+#bilioffice-root .bo-sidebar-head .bo-mobile-menu {
+  display: none;
+  margin-left: auto;
+}
+#bilioffice-root .bo-sidebar-search {
+  margin: 12px 12px 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: var(--bo-muted);
+  background: color-mix(in srgb, var(--bo-panel) 68%, var(--bo-side));
+  font-size: 12px;
+}
+#bilioffice-root .bo-conversation {
+  position: relative;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+}
+#bilioffice-root .bo-conversation-active {
+  border-left-color: var(--bo-accent);
+  background: var(--bo-accent2);
+}
+#bilioffice-root .bo-conversation time {
+  margin-left: auto;
+  align-self: flex-start;
+  color: var(--bo-muted);
+  font-size: 10px;
+}
+#bilioffice-root .bo-local-conversations {
+  padding: 18px 14px;
+  border-top: 1px solid var(--bo-border);
+}
+#bilioffice-root .bo-local-label {
+  color: var(--bo-muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+#bilioffice-root .bo-local-row {
+  padding: 8px 9px;
+  color: var(--bo-muted);
+  border-radius: 6px;
+  font-size: 12px;
+}
+#bilioffice-root .bo-local-row:hover {
+  color: var(--bo-text);
+  background: var(--bo-accent2);
+}
+#bilioffice-root .bo-header {
+  height: 62px;
+  padding: 0 18px;
+  gap: 12px;
+  background: var(--bo-panel);
+}
+#bilioffice-root .bo-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#bilioffice-root .bo-header-spacer {
+  flex: 1;
+}
+#bilioffice-root .bo-header-menu {
+  color: var(--bo-muted);
+  font-size: 20px;
+}
+#bilioffice-root .bo-chat {
+  padding: 24px max(28px, calc((100% - 860px) / 2));
+  padding-bottom: 30px;
+}
+#bilioffice-root .bo-composer {
+  margin: 0;
+  padding: 11px max(28px, calc((100% - 860px) / 2)) 14px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--bo-border);
+  background: var(--bo-panel);
+}
+#bilioffice-root .bo-composer input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  background: var(--bo-side);
+  color: var(--bo-text);
+  padding: 9px 11px;
+  outline: none;
+}
+#bilioffice-root .bo-composer input:focus {
+  border-color: var(--bo-accent);
+}
+#bilioffice-root .bo-composer-send {
+  padding: 0 15px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--bo-accent);
+}
+#bilioffice-root .bo-composer-send:hover {
+  filter: brightness(0.94);
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-app-rail {
+  background: #1d4f91;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-sidebar {
+  width: 238px;
+}
+#bilioffice-root[data-theme="dingtalk"] .bo-bubble {
+  border-radius: 3px 13px 13px 13px;
+  box-shadow: 0 2px 8px #1677ff12;
+}
+#bilioffice-root[data-theme="feishu"] .bo-app-rail {
+  background: #202b3c;
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar {
+  width: clamp(420px, 34vw, 680px);
+  border-left: 0;
+  display: flex;
+  flex-direction: row;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-label,
+#bilioffice-root[data-theme="feishu"] .bo-rail-static,
+#bilioffice-root[data-theme="wecom"] .bo-rail-label,
+#bilioffice-root[data-theme="wecom"] .bo-rail-static {
+  display: block;
+}
+#bilioffice-root[data-theme="feishu"] .bo-app-rail,
+#bilioffice-root[data-theme="wecom"] .bo-app-rail {
+  width: clamp(210px, 13.5vw, 276px);
+  align-items: stretch;
+  background: color-mix(in srgb, var(--bo-side) 92%, var(--bo-accent2));
+  color: var(--bo-text);
+  border-right: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand,
+#bilioffice-root[data-theme="wecom"] .bo-rail-brand {
+  width: auto;
+  height: 48px;
+  margin: 12px 16px 10px;
+  padding: 0 8px;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  background: transparent;
+  color: var(--bo-text);
+  font-size: 14px;
+}
+#bilioffice-root[data-theme="wecom"] .bo-rail-brand::after {
+  content: "我的企业";
+  font-weight: 600;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand::after {
+  content: "飞书工作台";
+  font-weight: 600;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav,
+#bilioffice-root[data-theme="wecom"] .bo-rail-nav {
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 12px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav button,
+#bilioffice-root[data-theme="wecom"] .bo-rail-nav button {
+  width: 100%;
+  height: 39px;
+  color: var(--bo-muted);
+  font-size: 19px;
+  border-radius: 7px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-nav button.active,
+#bilioffice-root[data-theme="wecom"] .bo-rail-nav button.active {
+  color: var(--bo-accent);
+  background: var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static,
+#bilioffice-root[data-theme="wecom"] .bo-rail-static {
+  border-radius: 7px;
+  margin: 1px 0;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-static:hover,
+#bilioffice-root[data-theme="wecom"] .bo-rail-static:hover {
+  background: var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-group-nav {
+  display: block;
+  width: 240px;
+  flex: none;
+  padding: 16px 10px;
+  background: color-mix(in srgb, var(--bo-side) 88%, var(--bo-panel));
+  border-right: 1px solid var(--bo-border);
+}
+#bilioffice-root[data-theme="feishu"] .bo-group-row {
+  padding: 11px 13px;
+  margin: 2px 0;
+  border-radius: 7px;
+  color: var(--bo-muted);
+  font-size: 14px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-group-row.active {
+  color: var(--bo-accent);
+  background: var(--bo-accent2);
+  font-weight: 600;
+}
+#bilioffice-root[data-theme="feishu"] .bo-conversation-pane {
+  overflow: hidden;
+}
+#bilioffice-root[data-theme="wecom"] .bo-sidebar {
+  width: clamp(320px, 24vw, 480px);
+}
+#bilioffice-root[data-theme="wecom"] .bo-sidebar-search {
+  margin-top: 14px;
+}
+#bilioffice-root[data-theme="wecom"] .bo-group-nav {
+  display: none;
+}
+#bilioffice-root[data-theme="wecom"] .bo-local-row,
+#bilioffice-root[data-theme="feishu"] .bo-local-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  font-size: 13px;
+}
+#bilioffice-root .bo-local-row time {
+  margin-left: auto;
+  color: var(--bo-muted);
+  font-size: 10px;
+}
+#bilioffice-root .bo-local-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--bo-accent);
+  background: var(--bo-accent2);
+  font-size: 12px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-header {
+  height: 68px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-bubble {
+  border-radius: 8px;
+  background: var(--bo-panel);
+  box-shadow: 0 1px 4px #1f23290d;
+}
+#bilioffice-root[data-theme="feishu"] .bo-composer input {
+  border-radius: 6px;
+}
+#bilioffice-root .bo-info-panel {
+  width: clamp(210px, 13vw, 270px);
+  flex: none;
+  background: var(--bo-panel);
+  border-left: 1px solid var(--bo-border);
+  overflow: auto;
+}
+#bilioffice-root .bo-info-head {
+  height: 62px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--bo-border);
+  font-weight: 600;
+}
+#bilioffice-root .bo-info-section {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--bo-border);
+}
+#bilioffice-root .bo-info-title {
+  color: var(--bo-muted);
+  font-size: 12px;
+  margin-bottom: 9px;
+}
+#bilioffice-root .bo-info-value {
+  color: var(--bo-text);
+  font-size: 13px;
+  line-height: 1.7;
+}
+@media (max-width: 800px) {
+  #bilioffice-root .bo-app-rail {
+    width: 56px;
+  }
+  #bilioffice-root .bo-sidebar {
+    width: 220px;
+  }
+  #bilioffice-root .bo-info-panel {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  #bilioffice-root .bo-app-rail {
+    width: 52px;
+  }
+  #bilioffice-root .bo-sidebar {
+    position: absolute;
+    left: 52px;
+    top: 0;
+    bottom: 0;
+    width: 238px;
+    transform: translateX(-110%);
+    box-shadow: 8px 0 24px #0002;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-sidebar {
+    width: 300px;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-group-nav {
+    display: none;
+  }
+  #bilioffice-root[data-theme="wecom"] .bo-app-rail,
+  #bilioffice-root[data-theme="feishu"] .bo-app-rail {
+    width: 52px;
+  }
+  #bilioffice-root[data-theme="wecom"] .bo-rail-label,
+  #bilioffice-root[data-theme="wecom"] .bo-rail-static,
+  #bilioffice-root[data-theme="feishu"] .bo-rail-label,
+  #bilioffice-root[data-theme="feishu"] .bo-rail-static {
+    display: none;
+  }
+  #bilioffice-root .bo-sidebar.open {
+    transform: none;
+  }
+  #bilioffice-root .bo-sidebar-head .bo-mobile-menu {
+    display: grid;
+  }
+  #bilioffice-root .bo-mobile-menu {
+    display: block;
+  }
+  #bilioffice-root .bo-header {
+    padding: 0 10px;
+  }
+  #bilioffice-root .bo-composer {
+    padding: 8px 10px 10px;
+  }
+  #bilioffice-root .bo-sidebar {
+    left: 0;
+  }
+}
+
+@media (min-width: 601px) {
+  #bilioffice-root[data-theme="feishu"] .bo-app-rail {
+    width: 180px;
+    align-items: stretch;
+    background: var(--bo-feishu-rail);
+    color: var(--bo-text);
+    border-right: 1px solid var(--bo-border);
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-rail-brand,
+  #bilioffice-root[data-theme="feishu"] .bo-rail-brand::after {
+    white-space: nowrap;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-sidebar {
+    width: 300px;
+    display: block;
+    flex-direction: column;
+    background: var(--bo-side);
+    border-right: 1px solid var(--bo-border);
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-group-nav {
+    display: none !important;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-info-panel {
+    display: none;
+  }
+}
+
+#bilioffice-root[data-theme="feishu"] .bo-conversation-copy,
+#bilioffice-root[data-theme="feishu"] .bo-local-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+#bilioffice-root[data-theme="feishu"] .bo-conversation-copy strong,
+#bilioffice-root[data-theme="feishu"] .bo-local-copy strong,
+#bilioffice-root[data-theme="feishu"] .bo-local-copy span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#bilioffice-root[data-theme="feishu"] .bo-conversation-copy strong,
+#bilioffice-root[data-theme="feishu"] .bo-local-copy strong {
+  color: var(--bo-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+#bilioffice-root[data-theme="feishu"] .bo-conversation-copy span,
+#bilioffice-root[data-theme="feishu"] .bo-local-copy span {
+  color: var(--bo-muted);
+  font-size: 11px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-header-meta {
+  color: var(--bo-muted);
+  font-size: 12px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-icon-action {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--bo-muted);
+  border-radius: 6px;
+  font-size: 18px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-icon-action:hover {
+  color: var(--bo-accent);
+  background: var(--bo-accent2);
+}
+#bilioffice-root[data-theme="feishu"] .bo-message-meta {
+  margin-bottom: 4px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-message-meta strong {
+  font-weight: 500;
+}
+#bilioffice-root[data-theme="feishu"] .bo-message-content {
+  width: min(410px, calc(100% - 48px));
+}
+#bilioffice-root[data-theme="feishu"] .bo-video-card {
+  width: 320px;
+  max-width: 100%;
+}
+#bilioffice-root[data-theme="feishu"] .bo-card-info {
+  padding: 9px 11px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-card-info h3 {
+  font-size: 14px;
+}
+#bilioffice-root .bo-auto-loading {
+  padding: 12px;
+  color: var(--bo-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Keep settings above every shell column, even in short browser windows. */
+#bilioffice-root .bo-settings {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  width: min(300px, calc(100vw - 24px));
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  z-index: 20;
+  pointer-events: auto;
+}
+#bilioffice-root .bo-setting-group {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bo-border);
+}
+#bilioffice-root .bo-setting-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+#bilioffice-root .bo-setting-options {
+  display: flex;
+  gap: 6px;
+}
+#bilioffice-root .bo-setting-option {
+  flex: 1;
+  min-height: 36px;
+  padding: 6px;
+  border: 1px solid var(--bo-border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+#bilioffice-root .bo-setting-option[aria-pressed="true"] {
+  border-color: var(--bo-accent);
+  background: color-mix(in srgb, var(--bo-accent) 12%, var(--bo-panel));
+  color: var(--bo-accent);
+}
+#bilioffice-root .bo-rail-nav {
+  min-height: 0;
+  overflow-y: auto;
+}
+#bilioffice-root .bo-rail-nav > * {
+  flex-shrink: 0;
+}
+#bilioffice-root .bo-rail-brand,
+#bilioffice-root .bo-rail-search,
+#bilioffice-root .bo-rail-footer {
+  flex-shrink: 0;
+}
+
+#bilioffice-root .bo-local-message .bo-bubble {
+  width: fit-content;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.7;
 }

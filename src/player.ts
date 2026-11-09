@@ -13,6 +13,7 @@ export class PlayerSession {
     onStop: () => void,
     onComments: (comments: Comment[]) => void,
     onCommentError: (message: string) => void,
+    feishu = false,
   ) {
     this.stop();
     const token = crypto.randomUUID();
@@ -35,7 +36,7 @@ export class PlayerSession {
     const status = document.createElement("div");
     status.className = "bo-player-status";
     status.setAttribute("role", "status");
-    status.textContent = "正在加载原生播放器…";
+    status.textContent = feishu ? "正在加载视频…" : "正在加载原生播放器…";
     const actions = document.createElement("div");
     actions.className = "bo-player-actions";
     const button = (text: string, fn: () => void) => {
@@ -60,13 +61,20 @@ export class PlayerSession {
     backdrop.hidden = true;
     backdrop.onclick = () => setLarge(false);
     button("关闭", () => this.stop());
-    button("原版视频 / 收藏 / 关注", () => openOriginal(video.url));
+    button(feishu ? "打开视频" : "原版视频 / 收藏 / 关注", () =>
+      openOriginal(video.url),
+    );
     button("重试", () => {
       ready = false;
-      status.textContent = "正在重新加载原生播放器…";
+      status.textContent = feishu
+        ? "正在重新加载视频…"
+        : "正在重新加载原生播放器…";
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        if (!ready) status.textContent = "加载超时，可重试或打开原版视频。";
+        if (!ready)
+          status.textContent = feishu
+            ? "视频加载超时，请重试。"
+            : "加载超时，可重试或打开原版视频。";
       }, 18000);
       frame.src = url.href;
     });
@@ -75,7 +83,9 @@ export class PlayerSession {
     let ready = false;
     let timeout = setTimeout(() => {
       if (!ready)
-        status.textContent = "加载超时或被原站限制，可重试或打开原版视频。";
+        status.textContent = feishu
+          ? "视频加载超时，请重试。"
+          : "加载超时或被原站限制，可重试或打开原版视频。";
     }, 18000);
     const handler = (e: MessageEvent) => {
       if (!validMessage(e, frame, token)) return;
@@ -83,7 +93,9 @@ export class PlayerSession {
         case "ready":
           ready = true;
           clearTimeout(timeout);
-          status.textContent = "原生播放器已就绪；使用播放器控制播放";
+          status.textContent = feishu
+            ? "视频已准备好，点击播放器播放"
+            : "原生播放器已就绪；使用播放器控制播放";
           break;
         case "state":
           host.dataset.time = String(e.data.time);

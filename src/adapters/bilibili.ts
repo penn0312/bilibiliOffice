@@ -4,6 +4,7 @@ declare const GM_xmlhttpRequest:
   | ((options: any) => { abort(): void });
 const initialPath = location.pathname;
 const initialURL = new URL(location.href);
+let nativeHome = false;
 export const orders = ["totalrank", "click", "pubdate", "dm", "stow"];
 export function routeFromLocation(): Route {
   const u = new URL(location.href),
@@ -45,6 +46,39 @@ export const safeURL = (value: string, base = location.href) => {
     return "";
   }
 };
+export function imageURL(value: string) {
+  if (!value.trim()) return "";
+  try {
+    const url = new URL(value, location.href);
+    if (
+      url.protocol === "http:" &&
+      (url.hostname === "hdslb.com" || url.hostname.endsWith(".hdslb.com"))
+    )
+      url.protocol = "https:";
+    return url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+function nativeCover(card: Element) {
+  const img = card.querySelector<HTMLImageElement>("picture img, img");
+  const candidates = [
+    img?.currentSrc,
+    img?.getAttribute("data-src"),
+    img?.getAttribute("src"),
+  ];
+  for (const source of card.querySelectorAll(
+    "picture source, picture img, img[srcset], img[data-srcset]",
+  )) {
+    for (const attribute of ["srcset", "data-srcset"]) {
+      const set = source.getAttribute(attribute) || "";
+      candidates.push(
+        ...set.split(",").map((entry) => entry.trim().split(/\s+/)[0]),
+      );
+    }
+  }
+  return candidates.map((value) => imageURL(value || "")).find(Boolean) || "";
+}
 export function originalVideo(id: string, part = 1) {
   return `https://www.bilibili.com/video/${encodeURIComponent(id)}/?p=${part}`;
 }
@@ -82,7 +116,7 @@ export function nativeVideos(): VideoItem[] {
         id,
         title,
         url: originalVideo(id),
-        cover: safeURL(img?.currentSrc || img?.dataset.src || img?.src || ""),
+        cover: nativeCover(card),
         author: {
           name:
             card
@@ -162,10 +196,10 @@ function item(v: any): VideoItem {
     id: v.bvid,
     title: plain(v.title),
     url: originalVideo(v.bvid),
-    cover: safeURL(v.pic || ""),
+    cover: imageURL(v.pic || ""),
     author: {
       name: plain(v.owner?.name || v.author || "B站用户"),
-      avatar: safeURL(v.owner?.face || ""),
+      avatar: imageURL(v.owner?.face || ""),
     },
     duration:
       typeof v.duration === "string"
@@ -220,16 +254,27 @@ export async function fetchVideos(
     };
   }
   const native =
-    (route.kind === "home" && initialPath === "/") ||
+    (route.kind === "home" && initialPath === "/" && (route.page || 1) === 1) ||
     (route.kind === "section" && initialPath === route.path)
       ? await waitNative(signal)
       : [];
+  if (route.kind === "home" && (route.page || 1) === 1)
+    nativeHome = native.length > 0;
   if ((route.kind === "home" || route.kind === "section") && native.length)
-    return { items: native, total: native.length, pages: 1 };
+    return {
+      items: native,
+      total: native.length,
+      pages: route.kind === "home" ? 2 : 1,
+    };
   if (route.kind === "section")
     throw Error("当前分区未采集到原站列表，请使用原版加载后重试。");
+  // A native home batch is followed by popular page 1, rather than skipping it.
+  const popularPage =
+    route.kind === "home" && nativeHome
+      ? Math.max(1, (route.page || 1) - 1)
+      : route.page || 1;
   const data = await api(
-    `/x/web-interface/popular?ps=20&pn=${route.page || 1}`,
+    `/x/web-interface/popular?ps=20&pn=${popularPage}`,
     signal,
   );
   return {

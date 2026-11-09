@@ -1,0 +1,318 @@
+/* These tokens follow the existing appearance setting. */
+#bilioffice-root[data-theme="feishu"] {
+  --fs-hover: color-mix(in srgb, var(--bo-accent) 6%, var(--bo-panel));
+  --fs-active: color-mix(in srgb, var(--bo-accent) 12%, var(--bo-panel));
+}
+#bilioffice-root[data-theme="feishu"] .bo-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--bo-panel);
+  overflow: hidden;
+}
+#bilioffice-root .fs-list-head {
+  height: 48px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+}
+#bilioffice-root .fs-list-head strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+#bilioffice-root .fs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 12px 12px;
+  flex: none;
+}
+#bilioffice-root .fs-filter {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 12px;
+  color: var(--bo-muted);
+}
+#bilioffice-root .fs-filter[aria-pressed="true"] {
+  color: var(--bo-accent);
+  background: var(--fs-active);
+}
+#bilioffice-root .fs-filter-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+#bilioffice-root .fs-pins {
+  display: flex;
+  gap: 15px;
+  padding: 6px 16px 14px;
+  border-bottom: 1px solid var(--bo-border);
+}
+#bilioffice-root .fs-pin {
+  min-width: 0;
+  width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+#bilioffice-root .fs-pin > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--bo-muted);
+}
+#bilioffice-root .fs-avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  position: relative;
+  background: var(--fs-avatar-color, #648ac6);
+  color: white;
+  font-size: 14px;
+  font-style: normal;
+}
+#bilioffice-root .fs-group-avatar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--fs-avatar-color) 20%, var(--bo-panel));
+}
+#bilioffice-root .fs-group-avatar i {
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  background: var(--fs-avatar-color);
+  color: #fff;
+  font-size: 8px;
+  line-height: 1;
+  font-style: normal;
+}
+#bilioffice-root .fs-group-avatar i:nth-child(2) {
+  opacity: 0.65;
+}
+#bilioffice-root .fs-group-avatar i:nth-child(3) {
+  opacity: 0.8;
+}
+#bilioffice-root .fs-conversations {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-top: 6px;
+}
+#bilioffice-root .fs-conversation {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  text-align: left;
+}
+#bilioffice-root .fs-conversation:hover {
+  background: var(--fs-hover);
+}
+#bilioffice-root .fs-conversation.active {
+  background: var(--fs-active);
+}
+#bilioffice-root .fs-conversation-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+#bilioffice-root .fs-conversation-copy strong {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#bilioffice-root .fs-preview {
+  display: block;
+  font-size: 12px;
+  color: var(--bo-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#bilioffice-root .fs-preview em {
+  color: #d96843;
+  font-style: normal;
+}
+#bilioffice-root .fs-conversation-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  color: var(--bo-muted);
+  font-size: 10px;
+}
+#bilioffice-root .fs-conversation-meta > span {
+  font-size: 9px;
+  opacity: 0.7;
+}
+#bilioffice-root .fs-unread-badge,
+#bilioffice-root .fs-rail-badge {
+  display: inline-grid;
+  place-items: center;
+  background: #e85f59;
+  color: #fff;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+}
+#bilioffice-root .fs-unread-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0 0 0 2px var(--bo-panel);
+}
+#bilioffice-root .fs-rail-badge {
+  margin-left: auto;
+}
+#bilioffice-root .fs-muted-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a3a8b0;
+}
+#bilioffice-root .fs-empty {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--bo-muted);
+}
+#bilioffice-root .fs-history {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  padding: 20px 28px;
+  background: var(--bo-panel);
+}
+#bilioffice-root .fs-history-day {
+  text-align: center;
+  font-size: 12px;
+  color: var(--bo-muted);
+  margin-bottom: 26px;
+}
+#bilioffice-root .fs-message {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 22px;
+}
+#bilioffice-root .fs-message-body {
+  max-width: min(510px, 85%);
+  min-width: 0;
+}
+#bilioffice-root .fs-message-meta {
+  font-size: 11px;
+  color: var(--bo-muted);
+  margin-bottom: 5px;
+}
+#bilioffice-root .fs-text-bubble {
+  display: inline-block;
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--bo-text) 6%, var(--bo-panel));
+  color: var(--bo-text);
+  font-size: 13px;
+  line-height: 1.7;
+  border-radius: 2px 8px 8px;
+}
+#bilioffice-root .fs-mention {
+  color: var(--bo-accent);
+  background: var(--fs-active);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+#bilioffice-root .fs-unread-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ca7d52;
+  font-size: 11px;
+  margin: 22px 0;
+}
+#bilioffice-root .fs-unread-divider::before,
+#bilioffice-root .fs-unread-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--bo-border);
+  flex: 1;
+}
+#bilioffice-root .fs-self {
+  flex-direction: row-reverse;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand::after {
+  content: "林沐 · 产品研发";
+  font-size: 12px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-brand {
+  margin: 0 0 15px;
+  gap: 8px;
+  padding: 0 4px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-toolbar h2 {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--bo-muted);
+}
+#bilioffice-root[data-theme="feishu"] .bo-chat {
+  background: var(--bo-panel);
+  padding-top: 16px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-bubble {
+  width: fit-content;
+  max-width: 100%;
+  background: color-mix(in srgb, var(--bo-text) 5%, var(--bo-panel));
+  box-shadow: none;
+}
+#bilioffice-root[data-theme="feishu"] .bo-composer {
+  background: var(--bo-panel);
+  min-height: 110px;
+  align-items: flex-end;
+}
+#bilioffice-root[data-theme="feishu"] .bo-composer input {
+  background: var(--bo-panel);
+  align-self: stretch;
+  border: 0;
+  padding-top: 15px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-composer-send {
+  height: 30px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+#bilioffice-root[data-theme="feishu"] .bo-rail-button {
+  color: var(--bo-muted);
+}
+@media (max-width: 600px) {
+  #bilioffice-root .fs-history {
+    padding: 14px;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-rail-brand::after {
+    content: none;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-rail-search {
+    display: none;
+  }
+  #bilioffice-root[data-theme="feishu"] .bo-composer {
+    min-height: 65px;
+  }
+}

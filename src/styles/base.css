@@ -8,6 +8,8 @@
   --bo-text: var(--bo-theme-text);
   --bo-muted: var(--bo-theme-muted);
   --bo-radius: 12px;
+  --bo-feishu-rail: #dce8f8;
+  color-scheme: light;
   position: fixed;
   inset: 0;
   z-index: 2147483000;
@@ -22,6 +24,10 @@
     sans-serif;
 }
 #bilioffice-root[data-appearance="dark"] {
+  color-scheme: dark;
+  --bo-feishu-rail: #1b2230;
+  --bo-accent: color-mix(in srgb, var(--bo-theme-accent) 75%, white);
+  --bo-accent2: color-mix(in srgb, var(--bo-theme-accent) 22%, #1f2329);
   --bo-panel: #1f2329;
   --bo-side: #17191c;
   --bo-bubble: #2a3139;
@@ -34,6 +40,10 @@
 }
 @media (prefers-color-scheme: dark) {
   #bilioffice-root[data-appearance="system"] {
+    color-scheme: dark;
+    --bo-feishu-rail: #1b2230;
+    --bo-accent: color-mix(in srgb, var(--bo-theme-accent) 75%, white);
+    --bo-accent2: color-mix(in srgb, var(--bo-theme-accent) 22%, #1f2329);
     --bo-panel: #1f2329;
     --bo-side: #17191c;
     --bo-bubble: #2a3139;

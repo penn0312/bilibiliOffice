@@ -22,6 +22,22 @@ const { validMessage } = await import("../work/bridge.mjs");
 assert.equal(a.safeURL(""), "");
 assert.equal(a.safeURL("javascript:alert(1)"), "");
 assert.equal(
+  a.imageURL("http://i0.hdslb.com/bfs/archive/test.jpg"),
+  "https://i0.hdslb.com/bfs/archive/test.jpg",
+);
+assert.equal(
+  a.imageURL("//i1.hdslb.com/cover.webp"),
+  "https://i1.hdslb.com/cover.webp",
+);
+assert.equal(
+  a.imageURL("https://i2.hdslb.com/cover.avif"),
+  "https://i2.hdslb.com/cover.avif",
+);
+assert.equal(a.imageURL("http://hdslb.com.evil.example/a.jpg"), "");
+assert.equal(a.imageURL("javascript:alert(1)"), "");
+assert.equal(a.imageURL("data:image/gif;base64,abc"), "");
+assert.equal(a.safeURL("http://www.bilibili.com/video/BV1xx411c7mD/"), "");
+assert.equal(
   a.safeURL("https://www.bilibili.com/c/tech/"),
   "https://www.bilibili.com/c/tech/",
 );
